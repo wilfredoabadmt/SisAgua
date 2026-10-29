@@ -25,5 +25,5 @@ RUN python manage.py collectstatic --noinput
 
 EXPOSE 8000
 
-# Comando de inicio: migración, carga de datos semilla y gunicorn
-CMD ["sh", "-c", "python manage.py migrate --noinput && python manage.py loaddata fixtures/seed_roles_permisos.json fixtures/seed_datos_maestros.json fixtures/seed_menus.json && gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 2 --timeout 120"]
+# Comando de inicio: migración, carga de datos semilla, creación de usuarios iniciales y gunicorn
+CMD ["sh", "-c", "python manage.py migrate --noinput && python manage.py loaddata fixtures/seed_roles_permisos.json fixtures/seed_datos_maestros.json fixtures/seed_menus.json && python manage.py crear_admin_inicial && gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 2 --timeout 120"]
