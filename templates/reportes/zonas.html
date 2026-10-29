@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+
+{% block title %}Reporte Territorial por Zona - SisAgua{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+
+    <!-- Membrete de Impresión Oficial -->
+    <div class="d-none d-print-block mb-4 text-center">
+        <h3 class="mb-0 fw-bold">{{ institucion.nombre }}</h3>
+        <p class="mb-0 text-muted small">{{ institucion.direccion }} | Teléfono: {{ institucion.telefono }} | NIT: {{ institucion.nit_personeria }}</p>
+        <h4 class="mt-2 fw-bold text-uppercase">Balance Territorial Integral por Sector</h4>
+        <p class="small text-muted mb-0">Generado el: {% now "d/m/Y H:i" %}</p>
+        <hr class="my-2">
+    </div>
+
+    <!-- Encabezado de Pantalla -->
+    <div class="d-flex justify-content-between align-items-center mb-3 d-print-none">
+        <div>
+            <h2 class="h3 mb-0 text-primary">
+                <i class="bi bi-geo-alt me-2"></i>Balance Territorial por Zona
+            </h2>
+            <p class="text-muted small mb-0">Padrón de socios, medidores activos, facturado vs recaudado y eficacia por sector (Sección 10.2).</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button onclick="window.print()" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-printer me-1"></i>Imprimir Oficial
+            </button>
+            <a href="?format=csv{% if periodo_seleccionado %}&periodo={{ periodo_seleccionado }}{% endif %}" class="btn btn-outline-success btn-sm">
+                <i class="bi bi-file-earmark-excel me-1"></i>Exportar CSV
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtro de Periodo -->
+    <div class="card shadow-sm border-0 mb-4 bg-light d-print-none">
+        <div class="card-body p-3">
+            <form method="GET" action="{% url 'reportes:zonas' %}" class="row g-2 align-items-center">
+                <div class="col-md-4">
+                    <label class="form-label small mb-1 fw-bold">Periodo a Evaluar (Opcional):</label>
+                    <input type="month" name="periodo" value="{{ periodo_seleccionado }}" class="form-control form-control-sm" placeholder="Dejar vacío para histórico global">
+                </div>
+                <div class="col-md-3 d-flex gap-1 align-self-end">
+                    <button type="submit" class="btn btn-primary btn-sm w-100">
+                        <i class="bi bi-funnel me-1"></i>Filtrar Periodo
+                    </button>
+                    {% if periodo_seleccionado %}
+                        <a href="{% url 'reportes:zonas' %}" class="btn btn-outline-secondary btn-sm" title="Limpiar filtro">
+                            <i class="bi bi-x-circle"></i>
+                        </a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tabla de Zonas -->
+    <div class="card shadow-sm border-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Código</th>
+                        <th>Nombre del Sector</th>
+                        <th class="text-center">Total Socios</th>
+                        <th class="text-center">Activos</th>
+                        <th class="text-center">Inactivos</th>
+                        <th class="text-center">Medidores</th>
+                        <th class="text-end">Total Facturado</th>
+                        <th class="text-end text-success">Total Recaudado</th>
+                        <th class="text-end text-danger">Mora Pendiente</th>
+                        <th class="text-center fw-bold">Eficacia Cobro</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for z in zonas_resumen %}
+                        <tr>
+                            <td class="fw-bold">{{ z.zona.codigo }}</td>
+                            <td>
+                                <div>{{ z.zona.nombre }}</div>
+                                <small class="text-muted">{{ z.zona.responsable|default:"" }}</small>
+                            </td>
+                            <td class="text-center"><span class="badge bg-secondary">{{ z.total_socios }}</span></td>
+                            <td class="text-center"><span class="badge bg-success-subtle text-success">{{ z.socios_activos }}</span></td>
+                            <td class="text-center"><span class="badge bg-danger-subtle text-danger">{{ z.socios_inactivos }}</span></td>
+                            <td class="text-center"><span class="badge bg-info-subtle text-info">{{ z.total_medidores }}</span></td>
+                            <td class="text-end">{{ institucion.moneda }} {{ z.total_facturado|floatformat:2 }}</td>
+                            <td class="text-end text-success fw-bold">{{ institucion.moneda }} {{ z.total_recaudado|floatformat:2 }}</td>
+                            <td class="text-end text-danger fw-bold">{{ institucion.moneda }} {{ z.total_mora|floatformat:2 }}</td>
+                            <td class="text-center">
+                                <div class="d-flex align-items-center justify-content-center gap-1">
+                                    <div class="progress flex-grow-1" style="height: 6px; max-width: 60px;">
+                                        <div class="progress-bar {% if z.eficacia_pct >= 90 %}bg-success{% elif z.eficacia_pct >= 70 %}bg-warning{% else %}bg-danger{% endif %}" role="progressbar" style="width: {{ z.eficacia_pct }}%;"></div>
+                                    </div>
+                                    <span class="small fw-bold">{{ z.eficacia_pct }}%</span>
+                                </div>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="10" class="text-center py-4 text-muted">
+                                No se encontraron sectores registrados en la base de datos.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+

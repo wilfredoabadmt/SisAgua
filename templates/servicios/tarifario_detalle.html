@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle de Tarifario — {{ tarifario.nombre }}{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto space-y-6">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 border-b border-slate-200 gap-4">
+        <div>
+            <div class="flex items-center space-x-2">
+                <h1 class="text-2xl font-bold text-slate-900">{{ tarifario.nombre }}</h1>
+                {% if not tarifario.fecha_vigencia_hasta %}
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+                        Vigente
+                    </span>
+                {% endif %}
+            </div>
+            <p class="text-sm text-slate-500 mt-1">
+                Servicio: <span class="font-semibold text-slate-800">{{ tarifario.servicio.nombre }}</span> | Categoría: <span class="font-semibold text-slate-800">{{ tarifario.get_categoria_display }}</span>
+            </p>
+        </div>
+        <a href="{% url 'servicios:tarifarios_list' %}" class="text-slate-500 hover:text-slate-800 font-medium text-sm flex items-center space-x-1">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>Volver a Tarifarios</span>
+        </a>
+    </div>
+
+    <!-- Parámetros Principales -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Tarifa Básica</p>
+            <p class="text-2xl font-bold text-slate-900 mt-1 font-mono">Bs {{ tarifario.tarifa_basica }}</p>
+            <p class="text-xs text-slate-500 mt-1">Cubre hasta {{ tarifario.consumo_minimo_m3 }} m³ de consumo.</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Precio por m³ Adicional</p>
+            <p class="text-2xl font-bold text-blue-700 mt-1 font-mono">Bs {{ tarifario.precio_adicional_m3 }}</p>
+            <p class="text-xs text-slate-500 mt-1">Aplicable al volumen que supera el mínimo.</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Ventana de Vigencia</p>
+            <p class="text-sm font-semibold text-slate-800 mt-2">
+                <i class="fa-regular fa-calendar-check text-emerald-600 mr-1"></i> Desde {{ tarifario.fecha_vigencia_desde|date:"d/m/Y" }}
+            </p>
+            <p class="text-xs text-slate-500 mt-1">
+                {% if tarifario.fecha_vigencia_hasta %}
+                    Hasta {{ tarifario.fecha_vigencia_hasta|date:"d/m/Y" }}
+                {% else %}
+                    Sin fecha límite (Tarifa activa en producción)
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+    <!-- Tramos Escalonados Opcionales -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="p-5 border-b border-slate-100 flex justify-between items-center">
+            <div>
+                <h2 class="text-base font-bold text-slate-900">Tramos Escalonados Específicos</h2>
+                <p class="text-xs text-slate-500 mt-0.5">
+                    Permite definir bloques de consumo con tarifas fijas o por metro cúbico (ej. tramo 0-10, 11-15, >15 m³).
+                </p>
+            </div>
+            <button onclick="document.getElementById('modal-nuevo-tramo').classList.remove('hidden')" class="bg-slate-800 hover:bg-slate-900 text-white font-medium py-1.5 px-3 rounded-lg text-xs transition flex items-center space-x-1">
+                <i class="fa-solid fa-plus"></i>
+                <span>Añadir Tramo</span>
+            </button>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
+                <thead class="bg-slate-50 text-slate-600 font-semibold text-xs uppercase tracking-wider">
+                    <tr>
+                        <th class="px-6 py-3">Orden</th>
+                        <th class="px-6 py-3">Desde (m³)</th>
+                        <th class="px-6 py-3">Hasta (m³)</th>
+                        <th class="px-6 py-3">Precio Unitario / Importe</th>
+                        <th class="px-6 py-3">Tipo de Cobro</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-slate-700">
+                    {% for tr in tramos %}
+                        <tr class="hover:bg-slate-50 transition">
+                            <td class="px-6 py-3.5 font-bold text-slate-800">{{ tr.orden }}</td>
+                            <td class="px-6 py-3.5 font-mono">{{ tr.desde_m3 }} m³</td>
+                            <td class="px-6 py-3.5 font-mono">
+                                {% if tr.hasta_m3 %}{{ tr.hasta_m3 }} m³{% else %}Abierto (En adelante){% endif %}
+                            </td>
+                            <td class="px-6 py-3.5 font-mono font-bold text-blue-700">Bs {{ tr.precio_unitario }}</td>
+                            <td class="px-6 py-3.5 text-xs">
+                                {% if tr.es_valor_fijo %}
+                                    <span class="px-2 py-0.5 rounded bg-purple-100 text-purple-800 font-semibold">Valor Total Fijo</span>
+                                {% else %}
+                                    <span class="px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-semibold">Por metro cúbico</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5" class="px-6 py-8 text-center text-slate-400 text-xs">
+                                <p>Este tarifario utiliza la fórmula estándar de tarifa básica + precio por m³ excedente.</p>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nuevo Tramo -->
+<div id="modal-nuevo-tramo" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl p-6">
+        <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+            <h3 class="font-bold text-slate-900">Añadir Tramo Tarifario</h3>
+            <button onclick="document.getElementById('modal-nuevo-tramo').classList.add('hidden')" class="text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <form action="{% url 'servicios:tramo_crear' tarifario.pk %}" method="post" class="space-y-3 mt-4">
+            {% csrf_token %}
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Orden de Evaluación</label>
+                {{ tramo_form.orden }}
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Desde (m³)</label>
+                    {{ tramo_form.desde_m3 }}
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Hasta (m³)</label>
+                    {{ tramo_form.hasta_m3 }}
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Precio Unitario / Importe (Bs)</label>
+                {{ tramo_form.precio_unitario }}
+            </div>
+            <div class="flex items-center space-x-2 pt-1">
+                {{ tramo_form.es_valor_fijo }}
+                <label for="{{ tramo_form.es_valor_fijo.id_for_label }}" class="text-xs font-medium text-slate-700">
+                    Es importe total fijo por tramo (no se multiplica por m³)
+                </label>
+            </div>
+            <div class="pt-4 border-t border-slate-100 flex justify-end space-x-2">
+                <button type="button" onclick="document.getElementById('modal-nuevo-tramo').classList.add('hidden')" class="px-4 py-2 border rounded-lg text-sm text-slate-600">Cancelar</button>
+                <button type="submit" class="px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg text-sm font-semibold">Guardar Tramo</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

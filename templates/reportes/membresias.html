@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+
+{% block title %}Reporte de Membresías y Afiliaciones - SisAgua{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+
+    <!-- Membrete de Impresión Oficial -->
+    <div class="d-none d-print-block mb-4 text-center">
+        <h3 class="mb-0 fw-bold">{{ institucion.nombre }}</h3>
+        <p class="mb-0 text-muted small">{{ institucion.direccion }} | Teléfono: {{ institucion.telefono }} | NIT: {{ institucion.nit_personeria }}</p>
+        <h4 class="mt-2 fw-bold text-uppercase">Reporte de Estado de Cuotas de Incorporación / Membresía</h4>
+        <p class="small text-muted mb-0">Generado el: {% now "d/m/Y H:i" %}</p>
+        <hr class="my-2">
+    </div>
+
+    <!-- Encabezado de Pantalla -->
+    <div class="d-flex justify-content-between align-items-center mb-3 d-print-none">
+        <div>
+            <h2 class="h3 mb-0 text-primary">
+                <i class="bi bi-card-checklist me-2"></i>Reporte de Membresías de Socios
+            </h2>
+            <p class="text-muted small mb-0">Seguimiento a cuotas de incorporación única generadas automáticamente al dar de alta socios (Sección 10.6).</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button onclick="window.print()" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-printer me-1"></i>Imprimir Oficial
+            </button>
+            <a href="?format=csv{% if zona_seleccionada %}&zona={{ zona_seleccionada }}{% endif %}{% if estado_seleccionado %}&estado={{ estado_seleccionado }}{% endif %}" class="btn btn-outline-success btn-sm">
+                <i class="bi bi-file-earmark-excel me-1"></i>Exportar CSV
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros de Consulta -->
+    <div class="card shadow-sm border-0 mb-4 bg-light d-print-none">
+        <div class="card-body p-3">
+            <form method="GET" action="{% url 'reportes:membresias' %}" class="row g-2 align-items-center">
+                <div class="col-md-4">
+                    <label class="form-label small mb-1 fw-bold">Filtrar por Zona:</label>
+                    <select name="zona" class="form-select form-select-sm">
+                        <option value="">-- Todas las Zonas --</option>
+                        {% for z in zonas %}
+                            <option value="{{ z.id }}" {% if zona_seleccionada == z.id %}selected{% endif %}>{{ z.codigo }} - {{ z.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small mb-1 fw-bold">Estado de la Cuota:</label>
+                    <select name="estado" class="form-select form-select-sm">
+                        <option value="">-- Todos los Estados --</option>
+                        <option value="PENDIENTE" {% if estado_seleccionado == 'PENDIENTE' %}selected{% endif %}>Pendiente de Cobro</option>
+                        <option value="PAGADA" {% if estado_seleccionado == 'PAGADA' %}selected{% endif %}>Pagada en Caja</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex gap-1 align-self-end">
+                    <button type="submit" class="btn btn-primary btn-sm w-100">
+                        <i class="bi bi-funnel me-1"></i>Filtrar
+                    </button>
+                    {% if zona_seleccionada or estado_seleccionado %}
+                        <a href="{% url 'reportes:membresias' %}" class="btn btn-outline-secondary btn-sm" title="Limpiar filtros">
+                            <i class="bi bi-x-circle"></i>
+                        </a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tarjetas de Resumen Numérico -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 border-start border-primary border-4">
+                <div class="card-body p-3">
+                    <span class="text-muted small text-uppercase fw-bold">Total Afiliaciones</span>
+                    <h4 class="h5 fw-bold text-primary mb-0">{{ datos.total_generadas }} emitidas</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 border-start border-success border-4">
+                <div class="card-body p-3">
+                    <span class="text-muted small text-uppercase fw-bold">Recaudado Membresías</span>
+                    <h4 class="h5 fw-bold text-success mb-0">{{ institucion.moneda }} {{ datos.monto_recaudado|floatformat:2 }}</h4>
+                    <small class="text-muted">{{ datos.total_pagadas }} cuotas canceladas</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 border-start border-danger border-4">
+                <div class="card-body p-3">
+                    <span class="text-muted small text-uppercase fw-bold">Pendiente de Cobro</span>
+                    <h4 class="h5 fw-bold text-danger mb-0">{{ institucion.moneda }} {{ datos.monto_pendiente|floatformat:2 }}</h4>
+                    <small class="text-muted">{{ datos.total_pendientes }} cuotas pendientes</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla Detallada de Membresías -->
+    <div class="card shadow-sm border-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Código Socio</th>
+                        <th>Socio</th>
+                        <th>Zona</th>
+                        <th>Fecha de Emisión</th>
+                        <th>Vencimiento</th>
+                        <th class="text-end">Monto Total</th>
+                        <th class="text-end fw-bold">Saldo Pendiente</th>
+                        <th class="text-center">Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in datos.membresias %}
+                        <tr>
+                            <td class="fw-bold">{{ m.socio.codigo }}</td>
+                            <td>{{ m.socio.nombres }} {{ m.socio.apellidos }}</td>
+                            <td>{{ m.socio.zona.nombre|default:"Sin Zona" }}</td>
+                            <td>{{ m.fecha_emision|date:"d/m/Y" }}</td>
+                            <td>{{ m.fecha_vencimiento|date:"d/m/Y" }}</td>
+                            <td class="text-end">{{ institucion.moneda }} {{ m.monto|floatformat:2 }}</td>
+                            <td class="text-end fw-bold {% if m.saldo_pendiente > 0 %}text-danger{% else %}text-success{% endif %}">
+                                {{ institucion.moneda }} {{ m.saldo_pendiente|floatformat:2 }}
+                            </td>
+                            <td class="text-center">
+                                <span class="badge {% if m.estado == 'PAGADA' %}bg-success-subtle text-success{% else %}bg-warning-subtle text-warning{% endif %}">
+                                    {{ m.get_estado_display }}
+                                </span>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center py-4 text-muted">
+                                No se encontraron registros de membresía bajo los filtros seleccionados.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+

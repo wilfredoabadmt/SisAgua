@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Retirar Medidor — {{ asignacion.medidor.codigo }}{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto space-y-6">
+    <div class="flex items-center justify-between pb-4 border-b border-slate-200">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-900">Retiro / Sustitución de Medidor</h1>
+            <p class="text-sm text-slate-500 mt-1">
+                Trazabilidad obligatoria (Regla R-DOM-04: captura de lectura final de retiro).
+            </p>
+        </div>
+        <a href="{% url 'socios:socio_detalle' asignacion.socio.pk %}" class="text-slate-500 hover:text-slate-800 font-medium text-sm flex items-center space-x-1">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>Volver a Socio</span>
+        </a>
+    </div>
+
+    <!-- Resumen de Conexión Actual -->
+    <div class="bg-amber-50 border border-amber-200 p-4 rounded-xl space-y-1">
+        <p class="font-bold text-amber-900">
+            Medidor {{ asignacion.medidor.codigo }} (Serie: {{ asignacion.medidor.numero_serie }})
+        </p>
+        <p class="text-xs text-amber-800">
+            Socio Titular: <span class="font-semibold">{{ asignacion.socio.nombre_completo }}</span> ({{ asignacion.socio.codigo }})
+        </p>
+        <p class="text-xs text-amber-700">
+            Instalado el {{ asignacion.fecha_asignacion|date:"d/m/Y" }} con lectura de partida: <span class="font-mono font-bold">{{ asignacion.lectura_instalacion }} m³</span>
+        </p>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg text-sm">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">
+                        Fecha de Retiro <span class="text-rose-500">*</span>
+                    </label>
+                    {{ form.fecha_retiro }}
+                    {% if form.fecha_retiro.errors %}
+                        <p class="text-xs text-rose-600 mt-1">{{ form.fecha_retiro.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">
+                        Lectura Final de Retiro (m³) <span class="text-rose-500">*</span>
+                    </label>
+                    {{ form.lectura_retiro }}
+                    <span class="text-[11px] text-slate-400">No puede ser inferior a {{ asignacion.lectura_instalacion }} m³</span>
+                    {% if form.lectura_retiro.errors %}
+                        <p class="text-xs text-rose-600 mt-1">{{ form.lectura_retiro.errors.0 }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">
+                    Motivo del Retiro <span class="text-rose-500">*</span>
+                </label>
+                {{ form.motivo_retiro }}
+                {% if form.motivo_retiro.errors %}
+                    <p class="text-xs text-rose-600 mt-1">{{ form.motivo_retiro.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">
+                    Destino / Estado del Medidor Físico
+                </label>
+                {{ form.nuevo_estado_medidor }}
+            </div>
+
+            <div class="pt-4 border-t border-slate-100 flex justify-end space-x-3">
+                <a href="{% url 'socios:socio_detalle' asignacion.socio.pk %}" class="px-5 py-2.5 border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 font-medium text-sm transition">
+                    Cancelar
+                </a>
+                <button type="submit" class="px-5 py-2.5 bg-rose-700 hover:bg-rose-800 text-white rounded-lg font-medium text-sm shadow-sm transition">
+                    Confirmar Retiro
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

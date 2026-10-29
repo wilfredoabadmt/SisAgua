@@ -1,0 +1,58 @@
+{% extends 'portal/base_portal.html' %}
+
+{% block portal_content %}
+<div class="row g-3">
+
+    <div class="col-12">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3">
+                <h5 class="h6 mb-0 fw-bold text-dark">
+                    <i class="bi bi-receipt-cutoff me-2 text-success"></i>Historial de Recibos Oficiales Cancelados en Caja
+                </h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nº Recibo</th>
+                            <th>Fecha y Hora</th>
+                            <th>Cajero Cobrador</th>
+                            <th>Forma de Pago</th>
+                            <th class="text-end fw-bold">Monto Cancelado</th>
+                            <th class="text-center">Comprobante Oficial</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in recibos %}
+                            <tr>
+                                <td class="fw-bold text-primary">{{ r.numero_recibo }}</td>
+                                <td>{{ r.fecha_emision|date:"d/m/Y H:i" }}</td>
+                                <td>{{ r.cajero.get_full_name|default:r.cajero.username }}</td>
+                                <td>
+                                    <span class="badge bg-secondary-subtle text-secondary">
+                                        {{ r.get_metodo_pago_display }}
+                                    </span>
+                                </td>
+                                <td class="text-end fw-bold text-success">{{ institucion.moneda }} {{ r.monto_total|floatformat:2 }}</td>
+                                <td class="text-center">
+                                    <a href="{% url 'portal:recibo_detalle' r.id %}" class="btn btn-outline-success btn-sm py-1">
+                                        <i class="bi bi-file-earmark-arrow-down me-1"></i>Ver / Imprimir
+                                    </a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted">
+                                    No cuenta con recibos oficiales emitidos a su nombre.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+

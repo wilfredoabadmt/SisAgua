@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block title %}Apertura de Turno de Caja - SisAgua{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow-sm border-0 border-top border-warning border-3">
+                <div class="card-header bg-white py-3">
+                    <h5 class="card-title text-primary mb-0">
+                        <i class="bi bi-unlock-fill me-2 text-warning"></i>Apertura de Turno de Caja
+                    </h5>
+                    <p class="text-muted small mb-0">Inicio de sesión de cobranza y asignación de fondo de cambio (Sección 9.5).</p>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST">
+                        {% csrf_token %}
+
+                        <div class="alert alert-info small mb-3">
+                            <i class="bi bi-info-circle-fill me-1"></i>
+                            <strong>Cajero responsable:</strong> {{ request.user.get_full_name|default:request.user.username }}<br>
+                            Los cobros registrados en ventanilla quedarán vinculados a este turno hasta su arqueo y cierre formal.
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Fondo Inicial de Caja / Cambio (Bs) <span class="text-danger">*</span></label>
+                            {{ form.monto_apertura }}
+                            {% if form.monto_apertura.errors %}
+                                <div class="text-danger small mt-1">{{ form.monto_apertura.errors }}</div>
+                            {% endif %}
+                            <small class="text-muted">Monto en efectivo recibido para cambio al abrir la ventanilla (ej. 50.00 o 100.00 Bs).</small>
+                        </div>
+
+                        <div class="d-grid gap-2 pt-2">
+                            <button type="submit" class="btn btn-warning btn-lg fw-bold text-dark">
+                                <i class="bi bi-check-circle me-1"></i>Abrir Turno de Caja
+                            </button>
+                            <a href="{% url 'caja:cobros' %}" class="btn btn-outline-secondary">Cancelar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

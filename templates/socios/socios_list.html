@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}Padrón de Socios — {{ institucion.nombre|default:"SisAgua" }}{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-6">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 border-b border-slate-200 gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Padrón de Socios</h1>
+            <p class="text-sm text-slate-500 mt-1">
+                Afiliados titulares, conexiones y estado de servicios comunitarios (Secciones 6.1 a 6.7).
+            </p>
+        </div>
+        <a href="{% url 'socios:socio_crear' %}" class="bg-blue-700 hover:bg-blue-800 text-white font-semibold py-2 px-4 rounded-lg shadow-sm transition flex items-center space-x-2">
+            <i class="fa-solid fa-user-plus"></i>
+            <span>Nuevo Socio (Alta + Membresía)</span>
+        </a>
+    </div>
+
+    <!-- Filtros de Búsqueda -->
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+        <form method="get" class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+            <div class="sm:col-span-2 relative">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400"></i>
+                <input type="text" name="buscar" value="{{ buscar }}" placeholder="Buscar por CI, código, nombres o apellidos..." class="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm">
+            </div>
+            <div>
+                <select name="zona" class="w-full py-2 px-3 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+                    <option value="">Todas las Zonas</option>
+                    {% for z in zonas %}
+                        <option value="{{ z.id }}" {% if zona_seleccionada == z.id|stringformat:"s" %}selected{% endif %}>
+                            {{ z.nombre }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex space-x-2">
+                <select name="estado" class="w-full py-2 px-3 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+                    <option value="">Todos los Estados</option>
+                    {% for val, label in estados %}
+                        <option value="{{ val }}" {% if estado_seleccionado == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg font-medium text-sm transition">
+                    Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla de Socios -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
+                <thead class="bg-slate-50 text-slate-600 font-semibold text-xs uppercase tracking-wider">
+                    <tr>
+                        <th class="px-6 py-3.5">Código / CI</th>
+                        <th class="px-6 py-3.5">Socio Titular</th>
+                        <th class="px-6 py-3.5">Zona / Predio</th>
+                        <th class="px-6 py-3.5 text-center">Medidores Activos</th>
+                        <th class="px-6 py-3.5">Estado</th>
+                        <th class="px-6 py-3.5 text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-slate-700">
+                    {% for s in socios %}
+                        <tr class="hover:bg-slate-50 transition">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <p class="font-mono text-xs font-bold text-blue-700">{{ s.codigo }}</p>
+                                <p class="text-xs text-slate-400">CI: {{ s.ci_formateado }}</p>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <p class="font-semibold text-slate-900">{{ s.nombre_completo }}</p>
+                                <p class="text-xs text-slate-400">
+                                    <i class="fa-solid fa-phone text-[10px] mr-1"></i>{{ s.telefono|default:"Sin teléfono" }}
+                                </p>
+                            </td>
+                            <td class="px-6 py-4">
+                                <p class="font-medium text-slate-800">{{ s.zona.nombre }}</p>
+                                <p class="text-xs text-slate-500">{{ s.direccion|truncatechars:45 }}</p>
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <span class="inline-flex items-center justify-center font-bold text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full">
+                                    {{ s.asignaciones_medidor.filter.count }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% if s.estado == 'ACTIVO' %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+                                        Activo
+                                    </span>
+                                {% elif s.estado == 'INACTIVO' %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
+                                        Inactivo
+                                    </span>
+                                {% elif s.estado == 'SUSPENDIDO' %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
+                                        Suspendido
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-800">
+                                        Retirado
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right space-x-2">
+                                <a href="{% url 'socios:socio_detalle' s.pk %}" class="text-blue-600 hover:text-blue-800 font-medium text-xs">
+                                    Ficha 360°
+                                </a>
+                                <a href="{% url 'socios:socio_editar' s.pk %}" class="text-slate-600 hover:text-slate-800 font-medium text-xs">
+                                    Editar
+                                </a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6" class="px-6 py-10 text-center text-slate-400">
+                                <i class="fa-solid fa-users text-3xl mb-2 text-slate-300"></i>
+                                <p>No se encontraron socios en el padrón.</p>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

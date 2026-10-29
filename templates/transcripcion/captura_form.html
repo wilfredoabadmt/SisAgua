@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+
+{% block title %}Transcribir Fila - {{ lote.codigo }} - SisAgua{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0 border-top border-primary border-3">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title text-primary mb-0">
+                            <i class="bi bi-pen-fill me-2"></i>Transcribir Lectura Histórica
+                        </h5>
+                        <p class="text-muted small mb-0">Lote: <strong>{{ lote.codigo }}</strong> ({{ lote.nombre }})</p>
+                    </div>
+                    <a href="{% url 'transcripcion:lote_detalle' lote.id %}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-x-circle me-1"></i>Volver al Lote
+                    </a>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST">
+                        {% csrf_token %}
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-7">
+                                <label class="form-label fw-bold">Socio Titular <span class="text-danger">*</span></label>
+                                {{ form.socio }}
+                                {% if form.socio.errors %}
+                                    <div class="text-danger small mt-1">{{ form.socio.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label fw-bold">Medidor (si figura en planilla)</label>
+                                {{ form.medidor }}
+                                {% if form.medidor.errors %}
+                                    <div class="text-danger small mt-1">{{ form.medidor.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Periodo Histórico (YYYY-MM) <span class="text-danger">*</span></label>
+                                {{ form.periodo }}
+                                {% if form.periodo.errors %}
+                                    <div class="text-danger small mt-1">{{ form.periodo.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Lectura Anterior (m³)</label>
+                                {{ form.lectura_anterior }}
+                                {% if form.lectura_anterior.errors %}
+                                    <div class="text-danger small mt-1">{{ form.lectura_anterior.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Lectura Actual (m³)</label>
+                                {{ form.lectura_actual }}
+                                {% if form.lectura_actual.errors %}
+                                    <div class="text-danger small mt-1">{{ form.lectura_actual.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Indicador dinámico de consumo calculado en vivo -->
+                        <div class="alert alert-light border py-2 mb-3 d-flex justify-content-between align-items-center">
+                            <span class="small text-muted">Consumo Histórico Calculado:</span>
+                            <strong class="h5 mb-0 text-primary" id="consumo-preview">- m³</strong>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Importe Histórico Documentado (Bs)</label>
+                                {{ form.importe_documentado }}
+                                {% if form.importe_documentado.errors %}
+                                    <div class="text-danger small mt-1">{{ form.importe_documentado.errors }}</div>
+                                {% endif %}
+                                <small class="text-muted">Monto textual manuscrito en el cuaderno físico.</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Referencia Foja / Folio Físico</label>
+                                {{ form.referencia_foja }}
+                                {% if form.referencia_foja.errors %}
+                                    <div class="text-danger small mt-1">{{ form.referencia_foja.errors }}</div>
+                                {% endif %}
+                                <small class="text-muted">Ej. Libro 1, Foja 12, Fila 8.</small>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Observaciones / Anomalías en Documento</label>
+                            {{ form.observaciones }}
+                            {% if form.observaciones.errors %}
+                                <div class="text-danger small mt-1">{{ form.observaciones.errors }}</div>
+                            {% endif %}
+                            <small class="text-muted">Si la letra es dudosa, el folio está roto o hay tachaduras.</small>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 pt-2 border-top">
+                            <a href="{% url 'transcripcion:lote_detalle' lote.id %}" class="btn btn-outline-secondary">Cancelar</a>
+                            <button type="submit" name="guardar_continuar" value="1" class="btn btn-outline-primary">
+                                <i class="bi bi-arrow-repeat me-1"></i>Guardar y Transcribir Siguiente
+                            </button>
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="bi bi-check-circle me-1"></i>Guardar y Salir
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const inputAnt = document.getElementById('id_lectura_anterior');
+    const inputAct = document.getElementById('id_lectura_actual');
+    const preview = document.getElementById('consumo-preview');
+
+    function actualizarConsumo() {
+        const ant = parseFloat(inputAnt.value);
+        const act = parseFloat(inputAct.value);
+        if (!isNaN(ant) && !isNaN(act)) {
+            if (act >= ant) {
+                preview.textContent = (act - ant).toFixed(2) + ' m³';
+                preview.className = 'h5 mb-0 text-success';
+            } else {
+                preview.textContent = '0.00 m³ (OBSERVADO: menor a anterior)';
+                preview.className = 'h5 mb-0 text-warning';
+            }
+        } else {
+            preview.textContent = '- m³';
+            preview.className = 'h5 mb-0 text-primary';
+        }
+    }
+
+    if (inputAnt && inputAct) {
+        inputAnt.addEventListener('input', actualizarConsumo);
+        inputAct.addEventListener('input', actualizarConsumo);
+        actualizarConsumo();
+    }
+});
+</script>
+{% endblock %}
+

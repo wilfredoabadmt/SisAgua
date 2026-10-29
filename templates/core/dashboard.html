@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Panel Principal — {{ institucion.nombre|default:"SisAgua" }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Encabezado de Bienvenida -->
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">
+                Bienvenido, {{ user.nombre_completo }}
+            </h1>
+            <p class="text-sm text-slate-500 mt-1">
+                Rol: <span class="font-semibold text-blue-700">{{ user.rol.nombre|default:"Sin Rol Asignado" }}</span> 
+                | Último acceso: {{ user.last_login|date:"d/m/Y H:i"|default:"Primer acceso" }}
+            </p>
+        </div>
+        <div class="flex items-center space-x-2">
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                <i class="fa-solid fa-circle text-[8px] mr-1.5 text-emerald-500"></i> Sistema Operativo
+            </span>
+        </div>
+    </div>
+
+    <!-- Tarjetas de Resumen Operativo -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center space-x-4">
+            <div class="h-12 w-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl">
+                <i class="fa-solid fa-users"></i>
+            </div>
+            <div>
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Socios Activos</p>
+                <h3 class="text-2xl font-extrabold text-slate-900">0</h3>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center space-x-4">
+            <div class="h-12 w-12 rounded-xl bg-cyan-50 text-cyan-600 flex items-center justify-center text-xl">
+                <i class="fa-solid fa-gauge-high"></i>
+            </div>
+            <div>
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Medidores</p>
+                <h3 class="text-2xl font-extrabold text-slate-900">0</h3>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center space-x-4">
+            <div class="h-12 w-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl">
+                <i class="fa-solid fa-file-invoice-dollar"></i>
+            </div>
+            <div>
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Deudas Pendientes</p>
+                <h3 class="text-2xl font-extrabold text-slate-900">{{ institucion.moneda|default:"Bs" }} 0.00</h3>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center space-x-4">
+            <div class="h-12 w-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl">
+                <i class="fa-solid fa-cash-register"></i>
+            </div>
+            <div>
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Recaudación Hoy</p>
+                <h3 class="text-2xl font-extrabold text-slate-900">{{ institucion.moneda|default:"Bs" }} 0.00</h3>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

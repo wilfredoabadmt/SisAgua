@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Captura de Lectura — {{ institucion.nombre|default:"SisAgua" }}{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto space-y-6">
+    <div class="flex items-center justify-between pb-4 border-b border-slate-200">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-900">{{ titulo }}</h1>
+            <p class="text-sm text-slate-500 mt-1">
+                Ingreso de medición mensual con cálculo inmediato (R-DOM-06 y R-DOM-07).
+            </p>
+        </div>
+        <a href="{% url 'consumo:lecturas_list' %}" class="text-slate-500 hover:text-slate-800 font-medium text-sm flex items-center space-x-1">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>Volver</span>
+        </a>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg text-sm">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">
+                        Periodo Mensual <span class="text-rose-500">*</span>
+                    </label>
+                    {{ form.periodo }}
+                    {% if form.periodo.errors %}
+                        <p class="text-xs text-rose-600 mt-1">{{ form.periodo.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">
+                        Fecha de la Toma <span class="text-rose-500">*</span>
+                    </label>
+                    {{ form.fecha_lectura }}
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">
+                    Medidor Asignado en Servicio <span class="text-rose-500">*</span>
+                </label>
+                {{ form.medidor }}
+                {% if form.medidor.errors %}
+                    <p class="text-xs text-rose-600 mt-1">{{ form.medidor.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">
+                    Lectura Actual de Campo (m³) <span class="text-rose-500">*</span>
+                </label>
+                {{ form.lectura_actual }}
+                <p class="text-[11px] text-slate-400 mt-1">
+                    Regla R-DOM-07: Si el valor es inferior a la lectura anterior, se marcará automáticamente como OBSERVADA para revisión.
+                </p>
+                {% if form.lectura_actual.errors %}
+                    <p class="text-xs text-rose-600 mt-1">{{ form.lectura_actual.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div class="flex items-center space-x-2 pt-1 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                {{ form.es_reinicio_contador }}
+                <label for="{{ form.es_reinicio_contador.id_for_label }}" class="text-xs font-medium text-slate-700 cursor-pointer">
+                    Marcar si el medidor mecánico dio la vuelta a cero tras 99999 (Rollover)
+                </label>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">
+                    Observaciones de Campo
+                </label>
+                {{ form.observaciones }}
+            </div>
+
+            <div class="pt-4 border-t border-slate-100 flex justify-end space-x-3">
+                <a href="{% url 'consumo:lecturas_list' %}" class="px-5 py-2.5 border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 font-medium text-sm transition">
+                    Cancelar
+                </a>
+                <button type="submit" class="px-5 py-2.5 bg-blue-700 hover:bg-blue-800 text-white rounded-lg font-medium text-sm shadow-sm transition">
+                    Registrar y Validar Lectura
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

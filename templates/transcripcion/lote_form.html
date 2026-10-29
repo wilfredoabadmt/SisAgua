@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block title %}Nuevo Lote de Transcripción - SisAgua{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0 border-top border-primary border-3">
+                <div class="card-header bg-white py-3">
+                    <h5 class="card-title text-primary mb-0">
+                        <i class="bi bi-file-earmark-plus me-2"></i>Registrar Nuevo Lote o Planilla Documental
+                    </h5>
+                    <p class="text-muted small mb-0">Identificación del cuaderno, empadronamiento o archivo fuente para transcripción (Sección 8.1).</p>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST">
+                        {% csrf_token %}
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Código del Lote / Planilla <span class="text-danger">*</span></label>
+                                {{ form.codigo }}
+                                {% if form.codigo.errors %}
+                                    <div class="text-danger small mt-1">{{ form.codigo.errors }}</div>
+                                {% endif %}
+                                <small class="text-muted">Identificador único (ej. LOT-2024-NORTE, CUADERNO-TOMO-1).</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Periodo Predeterminado (YYYY-MM)</label>
+                                {{ form.periodo_predeterminado }}
+                                {% if form.periodo_predeterminado.errors %}
+                                    <div class="text-danger small mt-1">{{ form.periodo_predeterminado.errors }}</div>
+                                {% endif %}
+                                <small class="text-muted">Facilita el autocompletado en la digitación (opcional).</small>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Nombre o Descripción del Lote <span class="text-danger">*</span></label>
+                            {{ form.nombre }}
+                            {% if form.nombre.errors %}
+                                <div class="text-danger small mt-1">{{ form.nombre.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-8">
+                                <label class="form-label fw-bold">Fuente Documental Física <span class="text-danger">*</span></label>
+                                {{ form.fuente_documental }}
+                                {% if form.fuente_documental.errors %}
+                                    <div class="text-danger small mt-1">{{ form.fuente_documental.errors }}</div>
+                                {% endif %}
+                                <small class="text-muted">Ej. Cuaderno manuscrito empastado tomo 2, archivo parroquial.</small>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Total Estimado de Filas</label>
+                                {{ form.total_estimado }}
+                                {% if form.total_estimado.errors %}
+                                    <div class="text-danger small mt-1">{{ form.total_estimado.errors }}</div>
+                                {% endif %}
+                                <small class="text-muted">Para cálculo de avance (0 si no se conoce).</small>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Observaciones Generales</label>
+                            {{ form.observaciones }}
+                            {% if form.observaciones.errors %}
+                                <div class="text-danger small mt-1">{{ form.observaciones.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{% url 'transcripcion:lotes_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="bi bi-check-circle me-1"></i>Crear Lote Documental
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %}{{ titulo }} — {{ institucion.nombre|default:"SisAgua" }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-6">
+    <div class="flex items-center justify-between pb-4 border-b border-slate-200">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-900">{{ titulo }}</h1>
+            <p class="text-sm text-slate-500 mt-1">
+                Padrón oficial de la comunidad (R-DOM-01: Identidad Única, R-DOM-13: Membresía Atómica).
+            </p>
+        </div>
+        <a href="{% url 'socios:socios_list' %}" class="text-slate-500 hover:text-slate-800 font-medium text-sm flex items-center space-x-1">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>Volver</span>
+        </a>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg text-sm">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">
+                        Código de Socio
+                    </label>
+                    {{ form.codigo }}
+                    <span class="text-[11px] text-slate-400">Autogenerado si vacío (ej. SOC-0001)</span>
+                    {% if form.codigo.errors %}
+                        <p class="text-xs text-rose-600 mt-1">{{ form.codigo.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">
+                        Cédula de Identidad (CI) <span class="text-rose-500">*</span>
+                    </label>
+                    {{ form.ci }}
+                    {% if form.ci.errors %}
+                        <p class="text-xs text-rose-600 mt-1">{{ form.ci.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">
+                        Complemento CI
+                    </label>
+                    {{ form.ci_complemento }}
+                    <span class="text-[11px] text-slate-400">Ej. 1A (solo si existe homónimo)</span>
+                    {% if form.ci_complemento.errors %}
+                        <p class="text-xs text-rose-600 mt-1">{{ form.ci_complemento.errors.0 }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">
+                        Nombres <span class="text-rose-500">*</span>
+                    </label>
+                    {{ form.nombres }}
+                    {% if form.nombres.errors %}
+                        <p class="text-xs text-rose-600 mt-1">{{ form.nombres.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">
+                        Apellidos <span class="text-rose-500">*</span>
+                    </label>
+                    {{ form.apellidos }}
+                    {% if form.apellidos.errors %}
+                        <p class="text-xs text-rose-600 mt-1">{{ form.apellidos.errors.0 }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">
+                        Zona Territorial <span class="text-rose-500">*</span>
+                    </label>
+                    {{ form.zona }}
+                    {% if form.zona.errors %}
+                        <p class="text-xs text-rose-600 mt-1">{{ form.zona.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">
+                        Estado Administrativo
+                    </label>
+                    {{ form.estado }}
+                    {% if form.estado.errors %}
+                        <p class="text-xs text-rose-600 mt-1">{{ form.estado.errors.0 }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">
+                    Dirección del Predio / Conexión <span class="text-rose-500">*</span>
+                </label>
+                {{ form.direccion }}
+                {% if form.direccion.errors %}
+                    <p class="text-xs text-rose-600 mt-1">{{ form.direccion.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">
+                        Teléfono / Celular
+                    </label>
+                    {{ form.telefono }}
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">
+                        Correo Electrónico
+                    </label>
+                    {{ form.email }}
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">
+                        Fecha de Afiliación
+                    </label>
+                    {{ form.fecha_ingreso }}
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">
+                    Observaciones
+                </label>
+                {{ form.observaciones }}
+            </div>
+
+            <div class="pt-4 border-t border-slate-100 flex justify-end space-x-3">
+                <a href="{% url 'socios:socios_list' %}" class="px-5 py-2.5 border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 font-medium text-sm transition">
+                    Cancelar
+                </a>
+                <button type="submit" class="px-5 py-2.5 bg-blue-700 hover:bg-blue-800 text-white rounded-lg font-medium text-sm shadow-sm transition">
+                    Guardar Socio
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

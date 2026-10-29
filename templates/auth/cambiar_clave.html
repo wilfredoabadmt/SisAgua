@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Cambiar Contraseña — {{ institucion.nombre|default:"SisAgua" }}{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto py-10 px-4">
+    <div class="bg-white p-8 rounded-2xl shadow-lg border border-slate-100">
+        <div class="text-center mb-6">
+            <div class="mx-auto h-12 w-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center text-xl mb-3">
+                <i class="fa-solid fa-key"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-slate-900">
+                {% if es_forzado %}
+                    Establezca su Contraseña Personal
+                {% else %}
+                    Cambiar Contraseña
+                {% endif %}
+            </h2>
+            <p class="mt-2 text-sm text-slate-500">
+                {% if es_forzado %}
+                    Por seguridad institucional, debe reemplazar su contraseña temporal antes de ingresar al sistema.
+                {% else %}
+                    Actualice su contraseña periódicamente para proteger su cuenta.
+                {% endif %}
+            </p>
+        </div>
+
+        <!-- Alerta de requisitos de seguridad -->
+        <div class="mb-6 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-r-lg text-xs text-blue-800 space-y-1">
+            <p class="font-semibold text-sm mb-1"><i class="fa-solid fa-shield-halved mr-1"></i> Requisitos de seguridad:</p>
+            <ul class="list-disc list-inside space-y-0.5">
+                <li>Mínimo <strong>8 caracteres</strong>.</li>
+                <li>Debe contener al menos <strong>una letra</strong> y <strong>un número</strong>.</li>
+                <li><strong>Prohibido</strong> utilizar su número de Carnet de Identidad.</li>
+                <li><strong>Prohibido</strong> coincidir con su nombre de usuario.</li>
+            </ul>
+        </div>
+
+        <form method="POST" action="{% url 'seguridad:cambiar_contrasena' %}" class="space-y-4">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="p-3 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded">
+                    {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            {% if not es_forzado %}
+                <div>
+                    <label for="id_password_actual" class="block text-sm font-medium text-slate-700 mb-1">Contraseña Actual</label>
+                    {{ form.password_actual }}
+                    {% if form.password_actual.errors %}
+                        <p class="text-red-600 text-xs mt-1">{{ form.password_actual.errors.0 }}</p>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            <div>
+                <label for="id_password_nuevo" class="block text-sm font-medium text-slate-700 mb-1">Nueva Contraseña</label>
+                {{ form.password_nuevo }}
+                {% if form.password_nuevo.errors %}
+                    <p class="text-red-600 text-xs mt-1">{{ form.password_nuevo.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div>
+                <label for="id_password_confirmar" class="block text-sm font-medium text-slate-700 mb-1">Confirmar Nueva Contraseña</label>
+                {{ form.password_confirmar }}
+                {% if form.password_confirmar.errors %}
+                    <p class="text-red-600 text-xs mt-1">{{ form.password_confirmar.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div class="pt-4">
+                <button type="submit" class="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white bg-blue-700 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                    Guardar Nueva Contraseña
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

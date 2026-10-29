@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Catálogo de Servicios — {{ institucion.nombre|default:"SisAgua" }}{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto space-y-6">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 border-b border-slate-200 gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Catálogo de Servicios</h1>
+            <p class="text-sm text-slate-500 mt-1">
+                Servicios autorizados por la organización y sus modalidades de cobro (Sección 5.1).
+            </p>
+        </div>
+        <div class="flex space-x-3">
+            <a href="{% url 'servicios:tarifarios_list' %}" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 px-4 rounded-lg transition flex items-center space-x-2">
+                <i class="fa-solid fa-calculator"></i>
+                <span>Ver Tarifarios</span>
+            </a>
+            <a href="{% url 'servicios:servicio_crear' %}" class="bg-blue-700 hover:bg-blue-800 text-white font-semibold py-2 px-4 rounded-lg shadow-sm transition flex items-center space-x-2">
+                <i class="fa-solid fa-plus"></i>
+                <span>Nuevo Servicio</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Tabla de Servicios -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
+                <thead class="bg-slate-50 text-slate-600 font-semibold text-xs uppercase tracking-wider">
+                    <tr>
+                        <th class="px-6 py-3.5">Código</th>
+                        <th class="px-6 py-3.5">Nombre del Servicio</th>
+                        <th class="px-6 py-3.5">Tipo</th>
+                        <th class="px-6 py-3.5">Modalidad de Cobro</th>
+                        <th class="px-6 py-3.5">Estado</th>
+                        <th class="px-6 py-3.5 text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-slate-700">
+                    {% for s in servicios %}
+                        <tr class="hover:bg-slate-50 transition">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="font-mono text-xs font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded">
+                                    {{ s.codigo }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <p class="font-semibold text-slate-900">{{ s.nombre }}</p>
+                                {% if s.descripcion %}
+                                    <p class="text-xs text-slate-400 mt-0.5">{{ s.descripcion|truncatechars:60 }}</p>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="text-xs font-medium text-slate-600">
+                                    {{ s.get_tipo_servicio_display }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% if s.modalidad_cobro == 'LECTURA_VOLUMETRICA' %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
+                                        <i class="fa-solid fa-gauge mr-1"></i> Por Lectura (m³)
+                                    </span>
+                                {% elif s.modalidad_cobro == 'PAGO_UNICO_MEMBRESIA' %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800">
+                                        <i class="fa-solid fa-id-card mr-1"></i> Membresía Única
+                                    </span>
+                                {% elif s.modalidad_cobro == 'CUOTA_FIJA_MENSUAL' %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+                                        <i class="fa-solid fa-calendar mr-1"></i> Cuota Fija Mensual
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
+                                        <i class="fa-solid fa-bolt mr-1"></i> Eventual
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% if s.activo %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+                                        Activo
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-800">
+                                        Inactivo
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right space-x-2">
+                                <a href="{% url 'servicios:servicio_editar' s.pk %}" class="text-blue-600 hover:text-blue-800 font-medium text-xs">
+                                    Editar
+                                </a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6" class="px-6 py-10 text-center text-slate-400">
+                                <i class="fa-solid fa-faucet-drip text-3xl mb-2 text-slate-300"></i>
+                                <p>No hay servicios registrados.</p>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

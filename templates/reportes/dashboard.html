@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+
+{% block title %}Panel Ejecutivo de Reportes - SisAgua{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="h3 mb-0 text-primary">
+                <i class="bi bi-bar-chart-line me-2"></i>Centro de Reportes y Analítica
+            </h2>
+            <p class="text-muted small mb-0">Consolidación administrativa, financiera y territorial de {{ institucion.nombre }}.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button onclick="window.print()" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-printer me-1"></i>Imprimir Vista
+            </button>
+        </div>
+    </div>
+
+    <!-- Tarjetas de Acceso Directo y Métricas Clave -->
+    <div class="row g-3 mb-4">
+        <!-- Deudores -->
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 border-start border-danger border-4 h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted small text-uppercase fw-bold">Cartera en Mora</span>
+                        <span class="badge bg-danger-subtle text-danger">{{ deudores.total_socios_deudores }} socios</span>
+                    </div>
+                    <h3 class="h4 fw-bold text-danger mb-1">{{ institucion.moneda }} {{ deudores.total_deuda_general|floatformat:2 }}</h3>
+                    <p class="text-muted small mb-3">Vencido: {{ institucion.moneda }} {{ deudores.total_deuda_vencida|floatformat:2 }}</p>
+                    <a href="{% url 'reportes:deudores' %}" class="btn btn-outline-danger btn-sm w-100">
+                        <i class="bi bi-person-x me-1"></i>Ver Deudores
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recaudación -->
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 border-start border-success border-4 h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted small text-uppercase fw-bold">Recaudación Neta</span>
+                        <span class="badge bg-success-subtle text-success">{{ recaudacion.cantidad_emitidos }} recibos</span>
+                    </div>
+                    <h3 class="h4 fw-bold text-success mb-1">{{ institucion.moneda }} {{ recaudacion.total_neto|floatformat:2 }}</h3>
+                    <p class="text-muted small mb-3">Efectivo: {{ institucion.moneda }} {{ recaudacion.total_efectivo|floatformat:2 }} | QR: {{ institucion.moneda }} {{ recaudacion.total_qr|floatformat:2 }}</p>
+                    <a href="{% url 'reportes:recaudacion' %}" class="btn btn-outline-success btn-sm w-100">
+                        <i class="bi bi-cash-stack me-1"></i>Ver Recaudación
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Zonas Territoriales -->
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 border-start border-primary border-4 h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted small text-uppercase fw-bold">Balance Territorial</span>
+                        <span class="badge bg-primary-subtle text-primary">{{ zonas|length }} zonas</span>
+                    </div>
+                    <h3 class="h4 fw-bold text-primary mb-1">Padrón de Sectores</h3>
+                    <p class="text-muted small mb-3">Eficacia de cobro y padrón medido por zona.</p>
+                    <a href="{% url 'reportes:zonas' %}" class="btn btn-outline-primary btn-sm w-100">
+                        <i class="bi bi-geo-alt me-1"></i>Ver Zonas
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Consumo y Medición -->
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 border-start border-info border-4 h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted small text-uppercase fw-bold">Consumo Volumétrico</span>
+                        <span class="badge bg-info-subtle text-info"><i class="bi bi-droplet-fill"></i> m³</span>
+                    </div>
+                    <h3 class="h4 fw-bold text-info mb-1">Monitoreo de Red</h3>
+                    <p class="text-muted small mb-3">Detección de anomalías, lecturas observadas y consumos 0.</p>
+                    <a href="{% url 'reportes:consumo' %}" class="btn btn-outline-info btn-sm w-100">
+                        <i class="bi bi-speedometer2 me-1"></i>Ver Consumos
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Módulo Adicional: Membresías -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white py-3">
+                    <h5 class="h6 mb-0 fw-bold text-dark">
+                        <i class="bi bi-card-checklist me-2 text-primary"></i>Afiliaciones e Incorporaciones Únicas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small">Control específico de las cuotas estatutarias de membresía inicial de los socios comunitarios.</p>
+                    <a href="{% url 'reportes:membresias' %}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-arrow-right me-1"></i>Ir a Reporte de Membresías
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white py-3">
+                    <h5 class="h6 mb-0 fw-bold text-dark">
+                        <i class="bi bi-shield-check me-2 text-success"></i>Gobernanza y Cumplimiento Normativo
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small">Todos los reportes reflejan datos en tiempo real de la base de datos operativa, sin duplicación de saldos ni almacenamiento intermedio (Principio P2 - Fuente Única de Verdad).</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+

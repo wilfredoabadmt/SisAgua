@@ -1,0 +1,176 @@
+[
+  {
+    "model": "socios.zona",
+    "pk": 1,
+    "fields": {
+      "codigo": "CENTRO",
+      "nombre": "Zona Central",
+      "descripcion": "Casco histórico y plaza principal comunitaria",
+      "responsable": "Don Florencio Mamani",
+      "observaciones": "Ruta de lectura #1",
+      "activo": true,
+      "created_at": "2026-10-28T00:00:00Z",
+      "updated_at": "2026-10-28T00:00:00Z"
+    }
+  },
+  {
+    "model": "socios.zona",
+    "pk": 2,
+    "fields": {
+      "codigo": "NORTE",
+      "nombre": "Sector Norte Alto",
+      "descripcion": "Límite superior con la represa comunal",
+      "responsable": "Doña Martha Condori",
+      "observaciones": "Ruta de lectura #2",
+      "activo": true,
+      "created_at": "2026-10-28T00:00:00Z",
+      "updated_at": "2026-10-28T00:00:00Z"
+    }
+  },
+  {
+    "model": "socios.zona",
+    "pk": 3,
+    "fields": {
+      "codigo": "SUR",
+      "nombre": "Barrio Lindo Sur",
+      "descripcion": "Área de expansión urbana y lotes nuevos",
+      "responsable": "Lic. Roberto Quispe",
+      "observaciones": "Ruta de lectura #3",
+      "activo": true,
+      "created_at": "2026-10-28T00:00:00Z",
+      "updated_at": "2026-10-28T00:00:00Z"
+    }
+  },
+  {
+    "model": "servicios.servicio",
+    "pk": 1,
+    "fields": {
+      "codigo": "AGUA",
+      "nombre": "Servicio de Agua Potable",
+      "descripcion": "Suministro continuo de agua potable por red y micromedición mensual",
+      "tipo_servicio": "AGUA_POTABLE",
+      "modalidad_cobro": "LECTURA_VOLUMETRICA",
+      "activo": true,
+      "created_at": "2026-10-28T00:00:00Z",
+      "updated_at": "2026-10-28T00:00:00Z"
+    }
+  },
+  {
+    "model": "servicios.servicio",
+    "pk": 2,
+    "fields": {
+      "codigo": "MEMBRESIA",
+      "nombre": "Derecho de Membresía y Afiliación",
+      "descripcion": "Aporte patrimonial único al afiliarse formalmente al comité (R-DOM-13)",
+      "tipo_servicio": "MEMBRESIA",
+      "modalidad_cobro": "PAGO_UNICO_MEMBRESIA",
+      "activo": true,
+      "created_at": "2026-10-28T00:00:00Z",
+      "updated_at": "2026-10-28T00:00:00Z"
+    }
+  },
+  {
+    "model": "servicios.servicio",
+    "pk": 3,
+    "fields": {
+      "codigo": "ALCANTARILLADO",
+      "nombre": "Mantenimiento de Alcantarillado",
+      "descripcion": "Cuota fija de mantenimiento de la red de alcantarillado sanitario",
+      "tipo_servicio": "ALCANTARILLADO",
+      "modalidad_cobro": "CUOTA_FIJA_MENSUAL",
+      "activo": true,
+      "created_at": "2026-10-28T00:00:00Z",
+      "updated_at": "2026-10-28T00:00:00Z"
+    }
+  },
+  {
+    "model": "servicios.tarifario",
+    "pk": 1,
+    "fields": {
+      "nombre": "Tarifario Doméstico Base 2026",
+      "servicio": 1,
+      "categoria": "DOMESTICO",
+      "tarifa_basica": "10.00",
+      "consumo_minimo_m3": "10.00",
+      "precio_adicional_m3": "2.00",
+      "fecha_vigencia_desde": "2026-01-01",
+      "fecha_vigencia_hasta": null,
+      "activo": true,
+      "created_at": "2026-10-28T00:00:00Z",
+      "updated_at": "2026-10-28T00:00:00Z"
+    }
+  },
+  {
+    "model": "servicios.tramotarifario",
+    "pk": 1,
+    "fields": {
+      "tarifario": 1,
+      "orden": 1,
+      "desde_m3": "0.00",
+      "hasta_m3": "10.00",
+      "precio_unitario": "10.00",
+      "es_valor_fijo": true
+    }
+  },
+  {
+    "model": "servicios.tramotarifario",
+    "pk": 2,
+    "fields": {
+      "tarifario": 1,
+      "orden": 2,
+      "desde_m3": "10.01",
+      "hasta_m3": "15.00",
+      "precio_unitario": "2.00",
+      "es_valor_fijo": false
+    }
+  },
+  {
+    "model": "servicios.tramotarifario",
+    "pk": 3,
+    "fields": {
+      "tarifario": 1,
+      "orden": 3,
+      "desde_m3": "15.01",
+      "hasta_m3": null,
+      "precio_unitario": "2.50",
+      "es_valor_fijo": false
+    }
+  },
+  {
+    "model": "medidores.medidor",
+    "pk": 1,
+    "fields": {
+      "codigo": "MED-0001",
+      "numero_serie": "SN-2026-0001",
+      "marca": "Zenner",
+      "modelo": "MNK-N",
+      "diametro": "1/2\"",
+      "lectura_inicial": "0.00",
+      "ubicacion": "Almacén Central",
+      "estado": "DISPONIBLE",
+      "observaciones": "Lote inicial de 2026",
+      "activo": true,
+      "created_at": "2026-10-28T00:00:00Z",
+      "updated_at": "2026-10-28T00:00:00Z"
+    }
+  },
+  {
+    "model": "medidores.medidor",
+    "pk": 2,
+    "fields": {
+      "codigo": "MED-0002",
+      "numero_serie": "SN-2026-0002",
+      "marca": "Elster",
+      "modelo": "V200",
+      "diametro": "1/2\"",
+      "lectura_inicial": "0.00",
+      "ubicacion": "Almacén Central",
+      "estado": "DISPONIBLE",
+      "observaciones": "Lote inicial de 2026",
+      "activo": true,
+      "created_at": "2026-10-28T00:00:00Z",
+      "updated_at": "2026-10-28T00:00:00Z"
+    }
+  }
+]
+

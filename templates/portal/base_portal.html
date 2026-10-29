@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block title %}Portal del Socio - {{ institucion.nombre }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-2">
+    <!-- Barra Superior de Navegación del Socio -->
+    <div class="card shadow-sm border-0 mb-3 bg-white">
+        <div class="card-body p-2 d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-primary fs-6 p-2"><i class="bi bi-droplet-fill"></i></span>
+                <div>
+                    <span class="fw-bold text-dark d-block mb-0">{{ socio.nombre_completo }}</span>
+                    <small class="text-muted">Código: <strong>{{ socio.codigo }}</strong> | CI: {{ socio.ci_formateado }} | Zona: {{ socio.zona.nombre }}</small>
+                </div>
+            </div>
+            <div class="btn-group btn-group-sm flex-wrap">
+                <a href="{% url 'portal:dashboard' %}" class="btn btn-outline-primary {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                    <i class="bi bi-speedometer2 me-1"></i>Inicio
+                </a>
+                <a href="{% url 'portal:medidores' %}" class="btn btn-outline-primary {% if request.resolver_match.url_name == 'medidores' or request.resolver_match.url_name == 'proforma' %}active{% endif %}">
+                    <i class="bi bi-water me-1"></i>Medidores y Lecturas
+                </a>
+                <a href="{% url 'portal:deudas' %}" class="btn btn-outline-primary {% if request.resolver_match.url_name == 'deudas' %}active{% endif %}">
+                    <i class="bi bi-calendar-check me-1"></i>Mis Deudas
+                </a>
+                <a href="{% url 'portal:recibos' %}" class="btn btn-outline-primary {% if request.resolver_match.url_name == 'recibos' or request.resolver_match.url_name == 'recibo_detalle' %}active{% endif %}">
+                    <i class="bi bi-receipt me-1"></i>Mis Recibos
+                </a>
+                <a href="{% url 'portal:perfil' %}" class="btn btn-outline-secondary {% if request.resolver_match.url_name == 'perfil' %}active{% endif %}">
+                    <i class="bi bi-person-gear me-1"></i>Mi Contacto
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenido específico de cada vista del portal -->
+    {% block portal_content %}{% endblock %}
+</div>
+{% endblock %}
+

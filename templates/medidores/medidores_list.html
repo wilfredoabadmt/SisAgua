@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}Inventario de Medidores — {{ institucion.nombre|default:"SisAgua" }}{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-6">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 border-b border-slate-200 gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Parque de Medidores</h1>
+            <p class="text-sm text-slate-500 mt-1">
+                Inventario de medidores físicos, series y estado de asignación (Sección 5.2 y R-DOM-03).
+            </p>
+        </div>
+        <a href="{% url 'medidores:medidor_crear' %}" class="bg-blue-700 hover:bg-blue-800 text-white font-semibold py-2 px-4 rounded-lg shadow-sm transition flex items-center space-x-2">
+            <i class="fa-solid fa-plus"></i>
+            <span>Nuevo Medidor</span>
+        </a>
+    </div>
+
+    <!-- Filtros -->
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+        <form method="get" class="flex flex-col sm:flex-row gap-3">
+            <div class="flex-1 relative">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400"></i>
+                <input type="text" name="buscar" value="{{ buscar }}" placeholder="Buscar por código, serie o marca..." class="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm">
+            </div>
+            <div>
+                <select name="estado" class="w-full py-2 px-3 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+                    <option value="">Todos los Estados</option>
+                    {% for val, label in estados %}
+                        <option value="{{ val }}" {% if estado_seleccionado == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="bg-slate-800 hover:bg-slate-900 text-white px-5 py-2 rounded-lg font-medium text-sm transition">
+                Filtrar
+            </button>
+        </form>
+    </div>
+
+    <!-- Tabla de Medidores -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
+                <thead class="bg-slate-50 text-slate-600 font-semibold text-xs uppercase tracking-wider">
+                    <tr>
+                        <th class="px-6 py-3.5">Código Interno</th>
+                        <th class="px-6 py-3.5">Número de Serie</th>
+                        <th class="px-6 py-3.5">Marca / Modelo</th>
+                        <th class="px-6 py-3.5">Lectura Inicial</th>
+                        <th class="px-6 py-3.5">Estado Operativo</th>
+                        <th class="px-6 py-3.5 text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-slate-700">
+                    {% for m in medidores %}
+                        <tr class="hover:bg-slate-50 transition">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="font-mono text-xs font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded">
+                                    {{ m.codigo }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap font-mono font-bold text-slate-900">
+                                {{ m.numero_serie }}
+                            </td>
+                            <td class="px-6 py-4">
+                                <p class="text-slate-800 font-medium">{{ m.marca|default:"Genérica" }} {{ m.modelo }}</p>
+                                <p class="text-xs text-slate-400">Diámetro: {{ m.diametro }}</p>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap font-mono text-slate-700">
+                                {{ m.lectura_inicial }} m³
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% if m.estado == 'DISPONIBLE' %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+                                        <i class="fa-solid fa-check-circle text-[10px] mr-1"></i> Disponible
+                                    </span>
+                                {% elif m.estado == 'INSTALADO' %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
+                                        <i class="fa-solid fa-faucet text-[10px] mr-1"></i> Instalado
+                                    </span>
+                                {% elif m.estado == 'MANTENIMIENTO' %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
+                                        <i class="fa-solid fa-wrench text-[10px] mr-1"></i> Mantenimiento
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-800">
+                                        {{ m.get_estado_display }}
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right space-x-2">
+                                {% if m.estado == 'DISPONIBLE' %}
+                                    <a href="{% url 'medidores:medidor_asignar' m.pk %}" class="text-blue-600 hover:text-blue-800 font-bold text-xs">
+                                        Asignar a Socio
+                                    </a>
+                                {% endif %}
+                                <a href="{% url 'medidores:medidor_editar' m.pk %}" class="text-slate-600 hover:text-slate-800 font-medium text-xs">
+                                    Editar
+                                </a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6" class="px-6 py-10 text-center text-slate-400">
+                                <i class="fa-solid fa-gauge-high text-3xl mb-2 text-slate-300"></i>
+                                <p>No hay medidores registrados en inventario.</p>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

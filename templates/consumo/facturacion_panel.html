@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Facturación Mensual (Periodo {{ periodo }}) — {{ institucion.nombre|default:"SisAgua" }}{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto space-y-6">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 border-b border-slate-200 gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Motor de Facturación Mensual</h1>
+            <p class="text-sm text-slate-500 mt-1">
+                Generación idempotente de obligaciones según lecturas validadas y tarifario activo (Sección 7.5).
+            </p>
+        </div>
+        <div class="flex space-x-2">
+            <a href="{% url 'consumo:lecturas_list' %}?periodo={{ periodo }}" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 px-3.5 rounded-lg text-sm flex items-center space-x-1.5">
+                <i class="fa-solid fa-list-check"></i>
+                <span>Ver Lecturas</span>
+            </a>
+            <a href="{% url 'servicios:tarifarios_list' %}" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 px-3.5 rounded-lg text-sm flex items-center space-x-1.5">
+                <i class="fa-solid fa-tags"></i>
+                <span>Tarifarios</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Barra de Selección de Periodo -->
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between">
+        <form method="get" class="flex items-center space-x-3">
+            <label class="text-xs font-semibold text-slate-700 uppercase">Periodo a Procesar:</label>
+            <input type="text" name="periodo" value="{{ periodo }}" class="px-3 py-1.5 border border-slate-200 rounded-lg text-sm font-mono focus:ring-2 focus:ring-blue-500">
+            <button type="submit" class="bg-slate-800 text-white px-3 py-1.5 rounded-lg text-xs font-semibold">Consultar Avance</button>
+        </form>
+        <span class="font-mono text-xs font-bold bg-blue-50 text-blue-800 px-3 py-1 rounded-full">
+            Avance de Lectura: {{ porcentaje_avance }}%
+        </span>
+    </div>
+
+    <!-- Indicadores del Periodo -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Medidores Instalados</p>
+            <p class="text-3xl font-extrabold text-slate-900 mt-1 font-mono">{{ total_instalados }}</p>
+            <p class="text-xs text-slate-500 mt-1">Conexiones activas en la red.</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Lecturas Validadas</p>
+            <p class="text-3xl font-extrabold text-emerald-600 mt-1 font-mono">{{ validadas_count }}</p>
+            <p class="text-xs text-slate-500 mt-1">Listas para facturación automática.</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Lecturas Observadas</p>
+            <p class="text-3xl font-extrabold {% if observadas_count > 0 %}text-rose-600{% else %}text-slate-400{% endif %} mt-1 font-mono">{{ observadas_count }}</p>
+            <p class="text-xs text-slate-500 mt-1">
+                {% if observadas_count > 0 %}
+                    <a href="{% url 'consumo:observadas_list' %}?periodo={{ periodo }}" class="text-rose-600 font-bold hover:underline">Resolver anomalías &rarr;</a>
+                {% else %}
+                    Sin observaciones pendientes.
+                {% endif %}
+            </p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Facturado</p>
+            <p class="text-3xl font-extrabold text-blue-700 mt-1 font-mono">Bs {{ monto_total_facturado }}</p>
+            <p class="text-xs text-slate-500 mt-1">{{ facturados_count }} obligaciones emitidas.</p>
+        </div>
+    </div>
+
+    <!-- Panel de Disparo de Facturación -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 space-y-4">
+        <div class="flex items-start space-x-3">
+            <div class="h-10 w-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-lg flex-shrink-0">
+                <i class="fa-solid fa-play"></i>
+            </div>
+            <div>
+                <h2 class="text-base font-bold text-slate-900">Ejecutar Motor de Liquidación de Agua</h2>
+                <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+                    Este proceso procesa en bloque todas las lecturas <span class="font-bold text-emerald-700">VALIDADAS</span> y <span class="font-bold text-blue-700">CORREGIDAS</span> del periodo {{ periodo }}. Aplica la tarifa vigente a la fecha, congela el snapshot de cálculo y emite las cuentas por cobrar oficiales (R-DOM-11).
+                </p>
+            </div>
+        </div>
+
+        <!-- Garantía Constitucional de Idempotencia -->
+        <div class="bg-slate-50 border border-slate-200 p-4 rounded-xl text-xs text-slate-600 space-y-1">
+            <p class="font-bold text-slate-800 flex items-center">
+                <i class="fa-solid fa-shield-halved text-blue-600 mr-1.5"></i>
+                Blindaje Constitucional de Idempotencia (Regla R-DOM-12)
+            </p>
+            <p>
+                Ejecutar o reintentar este proceso jamás duplicará obligaciones para socios o medidores ya procesados en el periodo {{ periodo }}. Las lecturas en estado <span class="font-bold text-rose-700">OBSERVADA</span> son omitidas automáticamente (Principio P10).
+            </p>
+        </div>
+
+        <form action="{% url 'consumo:facturacion_ejecutar' %}" method="post" onsubmit="return confirm('¿Confirmar la ejecución de facturación mensual para el periodo {{ periodo }}?');" class="pt-2">
+            {% csrf_token %}
+            <input type="hidden" name="periodo" value="{{ periodo }}">
+            <button type="submit" class="bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 px-6 rounded-xl shadow-md transition flex items-center space-x-2 text-sm">
+                <i class="fa-solid fa-bolt"></i>
+                <span>Generar Obligaciones del Periodo {{ periodo }}</span>
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

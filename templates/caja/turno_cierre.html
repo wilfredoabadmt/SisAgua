@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+
+{% block title %}Arqueo y Cierre de Turno de Caja - SisAgua{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="card shadow-sm border-0 border-top border-danger border-3">
+                <div class="card-header bg-white py-3">
+                    <h5 class="card-title text-danger mb-0">
+                        <i class="bi bi-lock-fill me-2"></i>Arqueo y Cierre de Turno de Caja
+                    </h5>
+                    <p class="text-muted small mb-0">Balance de operaciones, conteo físico de gaveta y cierre de sesión (Sección 9.5).</p>
+                </div>
+                <div class="card-body p-4">
+                    
+                    <!-- Resumen de Operaciones del Turno en Sistema -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-sm-6">
+                            <div class="p-3 bg-light rounded border">
+                                <span class="text-muted small d-block">FONDO INICIAL DE APERTURA</span>
+                                <span class="h5 fw-bold text-dark mb-0">Bs {{ turno.monto_apertura|floatformat:2 }}</span>
+                                <small class="text-muted d-block">Abierto: {{ turno.fecha_apertura|date:"d/m/Y H:i" }}</small>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="p-3 bg-light rounded border">
+                                <span class="text-muted small d-block">COBROS EN EFECTIVO SISTEMA</span>
+                                <span class="h5 fw-bold text-success mb-0">Bs {{ total_efectivo|floatformat:2 }}</span>
+                                <small class="text-muted d-block">Registrados en la gaveta</small>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="p-3 bg-light rounded border">
+                                <span class="text-muted small d-block">PAGOS DIGITALES (QR / TRANSF.)</span>
+                                <span class="h5 fw-bold text-info mb-0">Bs {{ total_digital|floatformat:2 }}</span>
+                                <small class="text-muted d-block">Ingresos bancarios directos</small>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="p-3 bg-primary-subtle rounded border border-primary text-primary">
+                                <span class="small fw-bold d-block">EFECTIVO ESPERADO EN GAVETA</span>
+                                <span class="h4 fw-bold mb-0" id="efectivo-esperado-val" data-esperado="{{ efectivo_esperado }}">Bs {{ efectivo_esperado|floatformat:2 }}</span>
+                                <small class="d-block">(Fondo Inicial + Efectivo Cobrado)</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Formulario de Declaración de Arqueo -->
+                    <form method="POST">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Efectivo Físico Contado en Gaveta (Bs) <span class="text-danger">*</span></label>
+                            {{ form.monto_declarado_efectivo }}
+                            {% if form.monto_declarado_efectivo.errors %}
+                                <div class="text-danger small mt-1">{{ form.monto_declarado_efectivo.errors }}</div>
+                            {% endif %}
+                            <small class="text-muted">Ingrese el total de billetes y monedas contados físicamente en la gaveta.</small>
+                        </div>
+
+                        <!-- Indicador Dinámico de Diferencia -->
+                        <div class="alert alert-secondary py-2 mb-3 d-flex justify-content-between align-items-center" id="box-diferencia">
+                            <span>Diferencia de Arqueo (Declarado - Esperado):</span>
+                            <strong class="h5 mb-0" id="diferencia-display">Bs 0.00</strong>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Observaciones / Justificación de Cierre</label>
+                            {{ form.observaciones_cierre }}
+                            {% if form.observaciones_cierre.errors %}
+                                <div class="text-danger small mt-1">{{ form.observaciones_cierre.errors }}</div>
+                            {% endif %}
+                            <small class="text-muted">Obligatorio si existe alguna diferencia (faltante o sobrante) entre lo declarado y lo esperado.</small>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-danger btn-lg fw-bold">
+                                <i class="bi bi-lock-fill me-1"></i>Confirmar Arqueo y Cerrar Turno
+                            </button>
+                            <a href="{% url 'caja:cobros' %}" class="btn btn-outline-secondary">Volver a Ventanilla</a>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const inputDeclarado = document.getElementById('id_monto_declarado_efectivo');
+    const displayDiferencia = document.getElementById('diferencia-display');
+    const boxDiferencia = document.getElementById('box-diferencia');
+    const esperado = parseFloat(document.getElementById('efectivo-esperado-val').dataset.esperado);
+
+    function actualizarDiferencia() {
+        const declarado = parseFloat(inputDeclarado.value) || 0.0;
+        const diff = declarado - esperado;
+        displayDiferencia.textContent = (diff >= 0 ? '+Bs ' : '-Bs ') + Math.abs(diff).toFixed(2);
+
+        boxDiferencia.classList.remove('alert-secondary', 'alert-success', 'alert-danger', 'alert-warning');
+        if (Math.abs(diff) < 0.01) {
+            boxDiferencia.classList.add('alert-success');
+            displayDiferencia.textContent = 'Bs 0.00 (Cuadre Exacto)';
+        } else if (diff < 0) {
+            boxDiferencia.classList.add('alert-danger');
+            displayDiferencia.textContent = '-Bs ' + Math.abs(diff).toFixed(2) + ' (Faltante)';
+        } else {
+            boxDiferencia.classList.add('alert-warning');
+            displayDiferencia.textContent = '+Bs ' + diff.toFixed(2) + ' (Sobrante)';
+        }
+    }
+
+    if (inputDeclarado) {
+        inputDeclarado.addEventListener('input', actualizarDiferencia);
+        actualizarDiferencia();
+    }
+});
+</script>
+{% endblock %}
+

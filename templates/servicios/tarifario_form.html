@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}{{ titulo }} — {{ institucion.nombre|default:"SisAgua" }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-6">
+    <div class="flex items-center justify-between pb-4 border-b border-slate-200">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-900">{{ titulo }}</h1>
+            <p class="text-sm text-slate-500 mt-1">
+                Estructura base de cobro por consumo (Principio P1: Fidelidad de Negocio y R-DOM-10: No Retroactividad).
+            </p>
+        </div>
+        <a href="{% url 'servicios:tarifarios_list' %}" class="text-slate-500 hover:text-slate-800 font-medium text-sm flex items-center space-x-1">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>Volver</span>
+        </a>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg text-sm">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">
+                    Nombre del Tarifario <span class="text-rose-500">*</span>
+                </label>
+                {{ form.nombre }}
+                {% if form.nombre.errors %}
+                    <p class="text-xs text-rose-600 mt-1">{{ form.nombre.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">
+                        Servicio Vinculado <span class="text-rose-500">*</span>
+                    </label>
+                    {{ form.servicio }}
+                    {% if form.servicio.errors %}
+                        <p class="text-xs text-rose-600 mt-1">{{ form.servicio.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">
+                        Categoría de Socio
+                    </label>
+                    {{ form.categoria }}
+                    {% if form.categoria.errors %}
+                        <p class="text-xs text-rose-600 mt-1">{{ form.categoria.errors.0 }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">
+                        Tarifa Básica (Bs)
+                    </label>
+                    {{ form.tarifa_basica }}
+                    <span class="text-[11px] text-slate-400">Importe fijo mínimo</span>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">
+                        Consumo Mínimo (m³)
+                    </label>
+                    {{ form.consumo_minimo_m3 }}
+                    <span class="text-[11px] text-slate-400">Volumen incluido</span>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">
+                        Precio por m³ Excedente (Bs)
+                    </label>
+                    {{ form.precio_adicional_m3 }}
+                    <span class="text-[11px] text-slate-400">Sobre el mínimo</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">
+                        Fecha Inicio de Vigencia <span class="text-rose-500">*</span>
+                    </label>
+                    {{ form.fecha_vigencia_desde }}
+                    {% if form.fecha_vigencia_desde.errors %}
+                        <p class="text-xs text-rose-600 mt-1">{{ form.fecha_vigencia_desde.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">
+                        Fecha Fin de Vigencia (Opcional)
+                    </label>
+                    {{ form.fecha_vigencia_hasta }}
+                    <span class="text-[11px] text-slate-400">En blanco si sigue vigente</span>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-2 pt-2">
+                {{ form.activo }}
+                <label for="{{ form.activo.id_for_label }}" class="text-sm font-medium text-slate-700 cursor-pointer">
+                    Tarifario activo
+                </label>
+            </div>
+
+            <div class="pt-4 border-t border-slate-100 flex justify-end space-x-3">
+                <a href="{% url 'servicios:tarifarios_list' %}" class="px-5 py-2.5 border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 font-medium text-sm transition">
+                    Cancelar
+                </a>
+                <button type="submit" class="px-5 py-2.5 bg-blue-700 hover:bg-blue-800 text-white rounded-lg font-medium text-sm shadow-sm transition">
+                    Guardar Tarifario
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

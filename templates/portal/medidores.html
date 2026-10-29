@@ -1,0 +1,110 @@
+{% extends 'portal/base_portal.html' %}
+
+{% block portal_content %}
+<div class="row g-3">
+
+    <!-- Medidores Asignados -->
+    <div class="col-12">
+        <div class="card shadow-sm border-0 mb-3">
+            <div class="card-header bg-white py-3">
+                <h5 class="h6 mb-0 fw-bold text-dark">
+                    <i class="bi bi-speedometer2 me-2 text-primary"></i>Medidores Conectados a su Predio
+                </h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Código</th>
+                            <th>Nº Serie</th>
+                            <th>Diámetro</th>
+                            <th>Fecha Instalación</th>
+                            <th>Lectura Inicial</th>
+                            <th>Estado Actual</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for a in asignaciones %}
+                            <tr>
+                                <td class="fw-bold">{{ a.medidor.codigo }}</td>
+                                <td>{{ a.medidor.numero_serie }}</td>
+                                <td>{{ a.medidor.diametro }}</td>
+                                <td>{{ a.fecha_asignacion|date:"d/m/Y" }}</td>
+                                <td>{{ a.lectura_instalacion|floatformat:2 }} m³</td>
+                                <td>
+                                    <span class="badge {% if a.activo %}bg-success-subtle text-success{% else %}bg-secondary-subtle text-secondary{% endif %}">
+                                        {% if a.activo %}Conectado y Operativo{% else %}Retirado / Histórico{% endif %}
+                                    </span>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center py-3 text-muted">
+                                    No tiene medidores asignados en el padrón técnico.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Historial de Lecturas Mensuales -->
+    <div class="col-12">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3">
+                <h5 class="h6 mb-0 fw-bold text-dark">
+                    <i class="bi bi-water me-2 text-info"></i>Historial de Lecturas y Consumo Volumétrico
+                </h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Periodo</th>
+                            <th>Medidor</th>
+                            <th>Fecha de Lectura</th>
+                            <th class="text-end">Lectura Anterior</th>
+                            <th class="text-end">Lectura Actual</th>
+                            <th class="text-end fw-bold">Consumo (m³)</th>
+                            <th class="text-center">Estado</th>
+                            <th class="text-center">Proforma Informativa</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for l in lecturas %}
+                            <tr>
+                                <td class="fw-bold">{{ l.periodo }}</td>
+                                <td>{{ l.medidor.codigo }}</td>
+                                <td>{{ l.fecha_lectura|date:"d/m/Y" }}</td>
+                                <td class="text-end">{{ l.lectura_anterior|floatformat:2 }}</td>
+                                <td class="text-end">{{ l.lectura_actual|floatformat:2 }}</td>
+                                <td class="text-end fw-bold text-info">{{ l.consumo_m3|floatformat:2 }} m³</td>
+                                <td class="text-center">
+                                    <span class="badge {% if l.estado == 'VALIDADA' %}bg-success-subtle text-success{% elif l.estado == 'OBSERVADA' %}bg-warning-subtle text-warning{% else %}bg-info-subtle text-info{% endif %}">
+                                        {{ l.get_estado_display }}
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <a href="{% url 'portal:proforma' l.periodo %}" class="btn btn-outline-primary btn-sm py-0">
+                                        <i class="bi bi-file-earmark-text me-1"></i>Ver Proforma
+                                    </a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="8" class="text-center py-4 text-muted">
+                                    No se registran lecturas en su historial de consumo.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+

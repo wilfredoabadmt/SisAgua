@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Lecturas de Consumo (Periodo {{ periodo }}) — {{ institucion.nombre|default:"SisAgua" }}{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-6">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 border-b border-slate-200 gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Registro de Lecturas Mensuales</h1>
+            <p class="text-sm text-slate-500 mt-1">
+                Monitoreo volumétrico y cálculo de consumo por micromedición (Secciones 7.1 y 7.2).
+            </p>
+        </div>
+        <div class="flex space-x-3">
+            <a href="{% url 'consumo:observadas_list' %}?periodo={{ periodo }}" class="bg-amber-100 hover:bg-amber-200 text-amber-900 font-semibold py-2 px-3.5 rounded-lg text-sm transition flex items-center space-x-1.5">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <span>Ver Observadas</span>
+            </a>
+            <a href="{% url 'consumo:facturacion_panel' %}?periodo={{ periodo }}" class="bg-slate-800 hover:bg-slate-900 text-white font-semibold py-2 px-3.5 rounded-lg text-sm transition flex items-center space-x-1.5">
+                <i class="fa-solid fa-calculator"></i>
+                <span>Facturación del Periodo</span>
+            </a>
+            <a href="{% url 'consumo:lectura_capturar' %}" class="bg-blue-700 hover:bg-blue-800 text-white font-semibold py-2 px-4 rounded-lg shadow-sm transition flex items-center space-x-2 text-sm">
+                <i class="fa-solid fa-pen-to-square"></i>
+                <span>Capturar Lectura</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Barra de Filtros -->
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+        <form method="get" class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1">Periodo Mensual</label>
+                <input type="text" name="periodo" value="{{ periodo }}" placeholder="YYYY-MM" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1">Zona Territorial</label>
+                <select name="zona" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+                    <option value="">Todas las Zonas</option>
+                    {% for z in zonas %}
+                        <option value="{{ z.id }}" {% if zona_seleccionada == z.id|stringformat:"s" %}selected{% endif %}>{{ z.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1">Búsqueda Rápida</label>
+                <input type="text" name="buscar" value="{{ buscar }}" placeholder="Medidor, socio o CI..." class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div class="flex items-end">
+                <button type="submit" class="w-full bg-slate-800 hover:bg-slate-900 text-white py-2 px-4 rounded-lg font-medium text-sm transition">
+                    Filtrar Lecturas
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla de Lecturas -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
+                <thead class="bg-slate-50 text-slate-600 font-semibold text-xs uppercase tracking-wider">
+                    <tr>
+                        <th class="px-6 py-3.5">Medidor</th>
+                        <th class="px-6 py-3.5">Socio Titular / Zona</th>
+                        <th class="px-6 py-3.5">Lectura Anterior</th>
+                        <th class="px-6 py-3.5">Lectura Actual</th>
+                        <th class="px-6 py-3.5 font-mono">Consumo (m³)</th>
+                        <th class="px-6 py-3.5">Estado</th>
+                        <th class="px-6 py-3.5 text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-slate-700">
+                    {% for l in lecturas %}
+                        <tr class="hover:bg-slate-50 transition">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="font-mono text-xs font-bold text-blue-700 bg-blue-50 px-2 py-1 rounded">
+                                    {{ l.medidor.codigo }}
+                                </span>
+                                <p class="text-xs text-slate-400 mt-0.5">Serie: {{ l.medidor.numero_serie }}</p>
+                            </td>
+                            <td class="px-6 py-4">
+                                <p class="font-semibold text-slate-900">{{ l.socio.nombre_completo }}</p>
+                                <p class="text-xs text-slate-500">{{ l.socio.codigo }} | {{ l.socio.zona.nombre }}</p>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap font-mono text-slate-600">
+                                {{ l.lectura_anterior }} m³
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap font-mono font-bold text-slate-900">
+                                {{ l.lectura_actual }} m³
+                                <p class="text-[11px] text-slate-400 font-sans">{{ l.fecha_lectura|date:"d/m/Y" }}</p>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap font-mono font-extrabold text-blue-700">
+                                {{ l.consumo_m3 }} m³
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% if l.estado == 'VALIDADA' %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+                                        Validada
+                                    </span>
+                                {% elif l.estado == 'CORREGIDA' %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
+                                        Corregida
+                                    </span>
+                                {% elif l.estado == 'OBSERVADA' %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-800">
+                                        <i class="fa-solid fa-triangle-exclamation text-[10px] mr-1"></i> Observada
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
+                                        {{ l.get_estado_display }}
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right space-x-2">
+                                <a href="{% url 'consumo:proforma_detalle' l.pk %}" class="text-blue-600 hover:text-blue-800 font-semibold text-xs">
+                                    Proforma
+                                </a>
+                                {% if l.estado == 'OBSERVADA' %}
+                                    <a href="{% url 'consumo:lectura_corregir' l.pk %}" class="text-rose-600 hover:text-rose-800 font-bold text-xs">
+                                        Resolver
+                                    </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="7" class="px-6 py-10 text-center text-slate-400">
+                                <i class="fa-solid fa-droplet text-3xl mb-2 text-slate-300"></i>
+                                <p>No se encontraron lecturas registradas para el periodo {{ periodo }}.</p>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+
+{% block title %}Ficha Integral — {{ socio.nombre_completo }} ({{ socio.codigo }}){% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto space-y-6">
+    <!-- Header Ficha Socio -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center pb-4 border-b border-slate-200 gap-4">
+        <div>
+            <div class="flex items-center space-x-3">
+                <span class="font-mono text-sm font-bold bg-blue-100 text-blue-800 px-3 py-1 rounded-lg">
+                    {{ socio.codigo }}
+                </span>
+                <h1 class="text-2xl font-bold text-slate-900">{{ socio.nombre_completo }}</h1>
+                {% if socio.estado == 'ACTIVO' %}
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+                        Activo
+                    </span>
+                {% elif socio.estado == 'INACTIVO' %}
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
+                        Inactivo
+                    </span>
+                {% elif socio.estado == 'SUSPENDIDO' %}
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
+                        Suspendido
+                    </span>
+                {% else %}
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-800">
+                        Retirado
+                    </span>
+                {% endif %}
+            </div>
+            <p class="text-sm text-slate-500 mt-1">
+                CI: <span class="font-mono font-bold text-slate-700">{{ socio.ci_formateado }}</span> | Zona: <span class="font-semibold text-slate-700">{{ socio.zona.nombre }}</span> | Afiliado el {{ socio.fecha_ingreso|date:"d/m/Y" }}
+            </p>
+        </div>
+        <div class="flex space-x-2">
+            {% if not socio.usuario %}
+                <form method="POST" action="{% url 'socios:socio_habilitar_portal' socio.pk %}" onsubmit="return confirm('¿Habilitar credenciales de acceso al portal para este socio?');">
+                    {% csrf_token %}
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-3.5 rounded-lg text-sm transition flex items-center space-x-1.5">
+                        <i class="fa-solid fa-key"></i>
+                        <span>Habilitar Portal</span>
+                    </button>
+                </form>
+            {% else %}
+                <span class="bg-indigo-50 border border-indigo-200 text-indigo-700 font-semibold py-2 px-3.5 rounded-lg text-sm flex items-center space-x-1.5" title="Usuario del Portal: {{ socio.usuario.username }}">
+                    <i class="fa-solid fa-user-check"></i>
+                    <span>Portal: {{ socio.usuario.username }}</span>
+                </span>
+            {% endif %}
+            <a href="{% url 'socios:socio_editar' socio.pk %}" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 px-3.5 rounded-lg text-sm transition flex items-center space-x-1.5">
+                <i class="fa-solid fa-pen"></i>
+                <span>Editar</span>
+            </a>
+            <button onclick="document.getElementById('modal-estado-socio').classList.remove('hidden')" class="bg-slate-800 hover:bg-slate-900 text-white font-semibold py-2 px-3.5 rounded-lg text-sm transition flex items-center space-x-1.5">
+                <i class="fa-solid fa-user-gear"></i>
+                <span>Cambiar Estado</span>
+            </button>
+            <a href="{% url 'socios:socios_list' %}" class="text-slate-500 hover:text-slate-800 font-medium text-sm flex items-center px-3 py-2">
+                <i class="fa-solid fa-arrow-left mr-1"></i> Padrón
+            </a>
+        </div>
+    </div>
+
+    <!-- Resumen Superior: Datos y Deuda -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 space-y-3">
+            <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Ubicación y Contacto</h2>
+            <div class="space-y-1.5 text-sm text-slate-700">
+                <p><i class="fa-solid fa-location-dot text-slate-400 w-5"></i> {{ socio.direccion }}</p>
+                <p><i class="fa-solid fa-phone text-slate-400 w-5"></i> {{ socio.telefono|default:"Sin teléfono" }}</p>
+                <p><i class="fa-solid fa-envelope text-slate-400 w-5"></i> {{ socio.email|default:"Sin correo registrado" }}</p>
+            </div>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 space-y-2">
+            <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Deuda Total Pendiente</h2>
+            <p class="text-3xl font-extrabold font-mono {% if total_deuda > 0 %}text-rose-600{% else %}text-emerald-600{% endif %}">
+                Bs {{ total_deuda }}
+            </p>
+            <p class="text-xs text-slate-500">
+                {% if total_deuda > 0 %}
+                    Suma consolidada de todas sus obligaciones pendientes (R-DOM-02).
+                {% else %}
+                    Al día. No registra obligaciones pendientes de pago.
+                {% endif %}
+            </p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 space-y-2">
+            <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Medidores Asignados</h2>
+            <div class="flex items-baseline space-x-2">
+                <span class="text-3xl font-extrabold text-blue-700 font-mono">{{ asignaciones_activas.count }}</span>
+                <span class="text-xs text-slate-500">activos vinculados (R-DOM-02)</span>
+            </div>
+            <a href="{% url 'medidores:medidores_list' %}" class="inline-block text-xs text-blue-600 hover:text-blue-800 font-semibold mt-1">
+                + Asignar nuevo medidor desde inventario
+            </a>
+        </div>
+    </div>
+
+    <!-- Medidores Asignados Actualmente -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="p-5 border-b border-slate-100 flex justify-between items-center">
+            <div>
+                <h2 class="text-base font-bold text-slate-900">Medidores Activos (R-DOM-02)</h2>
+                <p class="text-xs text-slate-500 mt-0.5">Dispositivos físicos actualmente midiendo consumo para este socio.</p>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
+                <thead class="bg-slate-50 text-slate-600 font-semibold text-xs uppercase tracking-wider">
+                    <tr>
+                        <th class="px-6 py-3">Código</th>
+                        <th class="px-6 py-3">Serie / Fábrica</th>
+                        <th class="px-6 py-3">Marca / Modelo</th>
+                        <th class="px-6 py-3">Fecha Instalación</th>
+                        <th class="px-6 py-3">Lectura Instalación</th>
+                        <th class="px-6 py-3 text-right">Acción</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-slate-700">
+                    {% for asig in asignaciones_activas %}
+                        <tr class="hover:bg-slate-50 transition">
+                            <td class="px-6 py-3.5 font-mono font-bold text-blue-700">{{ asig.medidor.codigo }}</td>
+                            <td class="px-6 py-3.5 font-mono text-slate-800">{{ asig.medidor.numero_serie }}</td>
+                            <td class="px-6 py-3.5">{{ asig.medidor.marca }} {{ asig.medidor.modelo }}</td>
+                            <td class="px-6 py-3.5">{{ asig.fecha_asignacion|date:"d/m/Y" }}</td>
+                            <td class="px-6 py-3.5 font-mono font-bold">{{ asig.lectura_instalacion }} m³</td>
+                            <td class="px-6 py-3.5 text-right">
+                                <a href="{% url 'medidores:asignacion_retirar' asig.pk %}" class="text-rose-600 hover:text-rose-800 font-semibold text-xs">
+                                    Retirar / Sustituir
+                                </a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6" class="px-6 py-6 text-center text-slate-400 text-xs">
+                                <p>Este socio no tiene ningún medidor activo asignado actualmente.</p>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Historial de Medidores Retirados -->
+    {% if asignaciones_historicas.exists %}
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="p-5 border-b border-slate-100">
+            <h2 class="text-base font-bold text-slate-900">Historial de Medidores Anteriores (R-DOM-04)</h2>
+            <p class="text-xs text-slate-500 mt-0.5">Trazabilidad histórica de dispositivos retirados o sustituidos con su lectura final.</p>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
+                <thead class="bg-slate-50 text-slate-600 font-semibold text-xs uppercase tracking-wider">
+                    <tr>
+                        <th class="px-6 py-3">Código</th>
+                        <th class="px-6 py-3">Serie</th>
+                        <th class="px-6 py-3">Periodo Instalado</th>
+                        <th class="px-6 py-3">Lectura Inicial</th>
+                        <th class="px-6 py-3">Lectura Final Retiro</th>
+                        <th class="px-6 py-3">Motivo de Retiro</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-slate-700">
+                    {% for asig in asignaciones_historicas %}
+                        <tr class="hover:bg-slate-50 transition">
+                            <td class="px-6 py-3.5 font-mono font-bold text-slate-600">{{ asig.medidor.codigo }}</td>
+                            <td class="px-6 py-3.5 font-mono text-slate-600">{{ asig.medidor.numero_serie }}</td>
+                            <td class="px-6 py-3.5 text-xs text-slate-600">
+                                {{ asig.fecha_asignacion|date:"d/m/Y" }} al {{ asig.fecha_retiro|date:"d/m/Y" }}
+                            </td>
+                            <td class="px-6 py-3.5 font-mono">{{ asig.lectura_instalacion }} m³</td>
+                            <td class="px-6 py-3.5 font-mono font-bold text-slate-900">{{ asig.lectura_retiro }} m³</td>
+                            <td class="px-6 py-3.5 text-xs text-slate-500">{{ asig.motivo_retiro|default:"—" }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Obligaciones y Cuentas por Cobrar -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="p-5 border-b border-slate-100">
+            <h2 class="text-base font-bold text-slate-900">Obligaciones Devengadas (Membresías y Consumo)</h2>
+            <p class="text-xs text-slate-500 mt-0.5">Cuentas por cobrar oficiales emitidas al socio (Principio P3 / P8).</p>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
+                <thead class="bg-slate-50 text-slate-600 font-semibold text-xs uppercase tracking-wider">
+                    <tr>
+                        <th class="px-6 py-3">Concepto / Periodo</th>
+                        <th class="px-6 py-3">Servicio</th>
+                        <th class="px-6 py-3">Fecha Emisión</th>
+                        <th class="px-6 py-3">Vencimiento</th>
+                        <th class="px-6 py-3 font-mono">Monto Total</th>
+                        <th class="px-6 py-3 font-mono">Saldo Pendiente</th>
+                        <th class="px-6 py-3 text-right">Estado</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-slate-700">
+                    {% for ob in obligaciones %}
+                        <tr class="hover:bg-slate-50 transition">
+                            <td class="px-6 py-3.5">
+                                <p class="font-semibold text-slate-900">{{ ob.concepto }}</p>
+                                <p class="font-mono text-xs text-slate-400">{{ ob.periodo }}</p>
+                            </td>
+                            <td class="px-6 py-3.5 text-xs font-medium text-slate-600">{{ ob.servicio.nombre }}</td>
+                            <td class="px-6 py-3.5 text-xs">{{ ob.fecha_emision|date:"d/m/Y" }}</td>
+                            <td class="px-6 py-3.5 text-xs">{{ ob.fecha_vencimiento|date:"d/m/Y" }}</td>
+                            <td class="px-6 py-3.5 font-mono font-bold text-slate-800">Bs {{ ob.monto }}</td>
+                            <td class="px-6 py-3.5 font-mono font-bold {% if ob.saldo_pendiente > 0 %}text-rose-600{% else %}text-emerald-600{% endif %}">
+                                Bs {{ ob.saldo_pendiente }}
+                            </td>
+                            <td class="px-6 py-3.5 text-right">
+                                {% if ob.estado == 'PENDIENTE' %}
+                                    <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-800">
+                                        Pendiente
+                                    </span>
+                                {% elif ob.estado == 'PAGADA' %}
+                                    <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+                                        Pagada
+                                    </span>
+                                {% else %}
+                                    <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
+                                        {{ ob.get_estado_display }}
+                                    </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="7" class="px-6 py-8 text-center text-slate-400 text-xs">
+                                <p>No existen obligaciones devengadas registradas para este socio.</p>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Cambio de Estado del Socio -->
+<div id="modal-estado-socio" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl p-6">
+        <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+            <h3 class="font-bold text-slate-900">Cambiar Estado del Socio</h3>
+            <button onclick="document.getElementById('modal-estado-socio').classList.add('hidden')" class="text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <form action="{% url 'socios:socio_cambiar_estado' socio.pk %}" method="post" class="space-y-4 mt-4">
+            {% csrf_token %}
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Nuevo Estado</label>
+                <select name="nuevo_estado" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm">
+                    {% for val, label in estados %}
+                        <option value="{{ val }}" {% if socio.estado == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+                <p class="text-[11px] text-slate-500 mt-1">
+                    Regla R-DOM-05: Cambiar a Inactivo o Retirado NO elimina sus obligaciones ni deudas acumuladas.
+                </p>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Motivo / Justificación</label>
+                <textarea name="motivo" rows="2" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm" placeholder="Justificación requerida para auditoría..."></textarea>
+            </div>
+            <div class="pt-4 border-t border-slate-100 flex justify-end space-x-2">
+                <button type="button" onclick="document.getElementById('modal-estado-socio').classList.add('hidden')" class="px-4 py-2 border rounded-lg text-sm text-slate-600">Cancelar</button>
+                <button type="submit" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-sm font-semibold">Confirmar Estado</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

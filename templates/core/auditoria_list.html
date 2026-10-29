@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}Bitácora de Auditoría — {{ institucion.nombre|default:"SisAgua" }}{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-6">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 border-b border-slate-200 gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Pista de Auditoría Inalterable</h1>
+            <p class="text-sm text-slate-500 mt-1">
+                Registro cronológico inmutable (Append-Only) de eventos de seguridad y configuración (Principio P6).
+            </p>
+        </div>
+        <div>
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-800">
+                <i class="fa-solid fa-shield-halved mr-1"></i> Solo Inserción (Inmutable)
+            </span>
+        </div>
+    </div>
+
+    <!-- Barra de Filtros -->
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+        <form method="GET" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end text-sm">
+            <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Módulo</label>
+                <input type="text" name="modulo" value="{{ filtros.modulo|default:'' }}" placeholder="Ej. AUTH, INSTITUCION" class="w-full px-3 py-1.5 border rounded-lg">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Acción</label>
+                <input type="text" name="accion" value="{{ filtros.accion|default:'' }}" placeholder="Ej. LOGIN, MODIFICAR" class="w-full px-3 py-1.5 border rounded-lg">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Resultado</label>
+                <select name="resultado" class="w-full px-3 py-1.5 border rounded-lg">
+                    <option value="">Todos</option>
+                    <option value="EXITO" {% if filtros.resultado == 'EXITO' %}selected{% endif %}>Éxito</option>
+                    <option value="FALLO" {% if filtros.resultado == 'FALLO' %}selected{% endif %}>Fallo</option>
+                </select>
+            </div>
+            <div class="flex space-x-2">
+                <button type="submit" class="w-full bg-slate-800 hover:bg-slate-900 text-white py-1.5 px-3 rounded-lg font-medium transition">
+                    Filtrar
+                </button>
+                <a href="{% url 'core:auditoria_list' %}" class="bg-slate-100 hover:bg-slate-200 text-slate-700 py-1.5 px-3 rounded-lg font-medium transition text-center">
+                    Limpiar
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla de Eventos -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
+                <thead class="bg-slate-50 text-slate-600 font-semibold text-xs uppercase tracking-wider">
+                    <tr>
+                        <th class="px-4 py-3">Fecha / Hora (UTC)</th>
+                        <th class="px-4 py-3">Usuario Responsable</th>
+                        <th class="px-4 py-3">Módulo : Acción</th>
+                        <th class="px-4 py-3">Resultado</th>
+                        <th class="px-4 py-3">IP Origen</th>
+                        <th class="px-4 py-3">Detalle Limpio</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-slate-700">
+                    {% for evento in page_obj %}
+                        <tr class="hover:bg-slate-50 transition">
+                            <td class="px-4 py-3 whitespace-nowrap font-mono text-xs text-slate-500">
+                                {{ evento.fecha_hora_utc|date:"Y-m-d H:i:s" }}
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap font-medium">
+                                {% if evento.usuario %}
+                                    {{ evento.usuario.nombre_completo }} <span class="text-xs text-slate-400">({{ evento.usuario.username }})</span>
+                                {% else %}
+                                    <span class="text-slate-400 italic">Anónimo / Sistema</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                <span class="font-mono text-xs bg-slate-100 px-2 py-0.5 rounded font-bold text-slate-800">
+                                    {{ evento.modulo }}:{{ evento.accion }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold
+                                    {% if evento.resultado == 'EXITO' %}bg-emerald-100 text-emerald-800
+                                    {% else %}bg-red-100 text-red-800{% endif %}">
+                                    {{ evento.resultado }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap font-mono text-xs text-slate-400">
+                                {{ evento.ip_origen|default:"-" }}
+                            </td>
+                            <td class="px-4 py-3 text-xs font-mono max-w-xs truncate text-slate-500" title="{{ evento.detalle_json }}">
+                                {{ evento.detalle_json }}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6" class="px-4 py-8 text-center text-slate-400 italic">
+                                No se encontraron registros de auditoría para los criterios seleccionados.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        {% if page_obj.has_other_pages %}
+            <div class="px-4 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-600">
+                <span>Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+                <div class="space-x-1">
+                    {% if page_obj.has_previous %}
+                        <a href="?page={{ page_obj.previous_page_number }}" class="px-2.5 py-1 bg-white border rounded hover:bg-slate-100">Anterior</a>
+                    {% endif %}
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}" class="px-2.5 py-1 bg-white border rounded hover:bg-slate-100">Siguiente</a>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

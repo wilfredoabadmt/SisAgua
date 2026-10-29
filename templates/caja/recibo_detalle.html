@@ -1,0 +1,235 @@
+{% extends 'base.html' %}
+
+{% block title %}Recibo Oficial {{ recibo.numero_recibo }} - SisAgua{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+    <!-- Barra de Acciones Superior (Oculta al imprimir) -->
+    <div class="d-flex justify-content-between align-items-center mb-4 d-print-none">
+        <a href="{% url 'caja:cobros' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Volver a Ventanilla
+        </a>
+        <div class="d-flex gap-2">
+            <button onclick="window.print()" class="btn btn-primary">
+                <i class="bi bi-printer-fill me-1"></i>Imprimir Recibo
+            </button>
+            {% if request.user.rol.es_administrador or 'CAJA:ANULAR' in request.user.rol.permisos.all.values_list %}
+                {% if recibo.estado == 'EMITIDO' %}
+                    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalAnularRecibo">
+                        <i class="bi bi-x-circle me-1"></i>Anular Recibo
+                    </button>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Contenedor Oficial del Recibo -->
+    <div class="card shadow-sm border-2 {% if recibo.estado == 'ANULADO' %}border-danger{% else %}border-primary{% endif %} position-relative p-4 bg-white" style="max-width: 850px; margin: 0 auto;">
+        
+        <!-- Marca de Agua si está Anulado -->
+        {% if recibo.estado == 'ANULADO' %}
+            <div class="position-absolute top-50 start-50 translate-middle text-danger opacity-25 fw-bold display-1 user-select-none" style="transform: translate(-50%, -50%) rotate(-30deg); z-index: 10; font-size: 5rem; letter-spacing: 10px;">
+                ANULADO
+            </div>
+        {% endif %}
+
+        <!-- Encabezado Institucional -->
+        <div class="row align-items-center pb-3 border-bottom mb-3">
+            <div class="col-8">
+                <h4 class="fw-bold mb-1 text-primary">{{ institucion.nombre }}</h4>
+                <p class="text-muted small mb-0">{{ institucion.direccion }} | Teléfono: {{ institucion.telefono }}</p>
+                <p class="text-muted small mb-0">NIT / Personería Jurídica: {{ institucion.nit_personeria|default:"En trámite" }}</p>
+            </div>
+            <div class="col-4 text-end">
+                <div class="border border-2 border-primary rounded p-2 text-center bg-light">
+                    <span class="text-muted small fw-bold d-block">RECIBO OFICIAL DE COBRANZA</span>
+                    <span class="h5 fw-bold text-primary mb-0">{{ recibo.numero_recibo }}</span>
+                </div>
+                <div class="mt-1 small">
+                    <span class="badge {% if recibo.estado == 'EMITIDO' %}bg-success{% else %}bg-danger{% endif %}">
+                        ESTADO: {{ recibo.get_estado_display|upper }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alerta de Anulación si aplica -->
+        {% if recibo.estado == 'ANULADO' %}
+            <div class="alert alert-danger py-2 mb-3 small">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                <strong>DOCUMENTO ANULADO:</strong> Anulado el {{ recibo.fecha_anulacion|date:"d/m/Y H:i" }} por <strong>{{ recibo.usuario_anulacion.get_full_name|default:recibo.usuario_anulacion.username }}</strong>.
+                <br><strong>Motivo:</strong> {{ recibo.motivo_anulacion }}
+            </div>
+        {% endif %}
+
+        <!-- Datos del Socio y de Emisión -->
+        <div class="row g-3 mb-3 small bg-light p-3 rounded">
+            <div class="col-6">
+                <p class="mb-1"><span class="text-muted">Socio Titular:</span> <strong>{{ recibo.socio.apellidos }}, {{ recibo.socio.nombres }}</strong></p>
+                <p class="mb-1"><span class="text-muted">Código Socio:</span> <strong>{{ recibo.socio.codigo }}</strong></p>
+                <p class="mb-1"><span class="text-muted">Documento (CI):</span> <strong>{{ recibo.socio.ci }}{% if recibo.socio.ci_complemento %}-{{ recibo.socio.ci_complemento }}{% endif %}</strong></p>
+                <p class="mb-0"><span class="text-muted">Zona / Sector:</span> {{ recibo.socio.zona.nombre }}</p>
+            </div>
+            <div class="col-6 text-end">
+                <p class="mb-1"><span class="text-muted">Fecha y Hora:</span> <strong>{{ recibo.fecha_emision|date:"d/m/Y H:i:s" }}</strong></p>
+                <p class="mb-1"><span class="text-muted">Cajero:</span> {{ recibo.cajero.get_full_name|default:recibo.cajero.username }}</p>
+                <p class="mb-1"><span class="text-muted">Forma de Pago:</span> <span class="badge bg-secondary">{{ recibo.get_metodo_pago_display }}</span></p>
+                <p class="mb-0"><span class="text-muted">Turno de Caja:</span> #{{ recibo.turno_id }}</p>
+            </div>
+        </div>
+
+        <!-- Detalle de Conceptos Liquidados -->
+        <div class="table-responsive mb-3">
+            <table class="table table-bordered align-middle mb-0">
+                <thead class="table-light small">
+                    <tr>
+                        <th style="width: 40px;" class="text-center">#</th>
+                        <th>Periodo</th>
+                        <th>Concepto Liquidado</th>
+                        <th class="text-end" style="width: 140px;">Subtotal (Bs)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for d in recibo.detalles.all %}
+                        <tr>
+                            <td class="text-center small">{{ forloop.counter }}</td>
+                            <td><span class="badge bg-light text-dark border">{{ d.periodo }}</span></td>
+                            <td>{{ d.concepto }}</td>
+                            <td class="text-end fw-bold">Bs {{ d.subtotal|floatformat:2 }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="table-light">
+                        <td colspan="3" class="text-end fw-bold">TOTAL PAGADO:</td>
+                        <td class="text-end fw-bold fs-6 text-primary">Bs {{ recibo.monto_total|floatformat:2 }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <!-- Literal y Saldos -->
+        <div class="p-3 bg-light rounded border mb-4 small">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <span class="text-muted d-block">SON:</span>
+                    <strong class="text-dark">{{ recibo.monto_literal }}</strong>
+                </div>
+                <div class="col-md-4 text-md-end mt-2 mt-md-0 border-start ps-3">
+                    <div><span class="text-muted">Saldo Anterior:</span> Bs {{ recibo.saldo_anterior|floatformat:2 }}</div>
+                    <div><span class="text-muted">Monto Cancelado:</span> - Bs {{ recibo.monto_total|floatformat:2 }}</div>
+                    <div class="fw-bold mt-1 text-danger">Saldo Restante: Bs {{ recibo.saldo_posterior|floatformat:2 }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- QR de Autenticidad y Código de Verificación -->
+        <div class="row align-items-center pb-4 mb-4 border-bottom">
+            <div class="col-3 text-center">
+                <div class="p-2 border rounded bg-light d-inline-block">
+                    <!-- Representación de QR -->
+                    <svg width="90" height="90" viewBox="0 0 100 100">
+                        <rect width="100" height="100" fill="#fff" />
+                        <rect x="10" y="10" width="25" height="25" fill="#000" />
+                        <rect x="15" y="15" width="15" height="15" fill="#fff" />
+                        <rect x="18" y="18" width="9" height="9" fill="#000" />
+                        
+                        <rect x="65" y="10" width="25" height="25" fill="#000" />
+                        <rect x="70" y="15" width="15" height="15" fill="#fff" />
+                        <rect x="73" y="18" width="9" height="9" fill="#000" />
+
+                        <rect x="10" y="65" width="25" height="25" fill="#000" />
+                        <rect x="15" y="70" width="15" height="15" fill="#fff" />
+                        <rect x="18" y="73" width="9" height="9" fill="#000" />
+
+                        <rect x="45" y="20" width="8" height="8" fill="#000" />
+                        <rect x="45" y="45" width="12" height="12" fill="#000" />
+                        <rect x="65" y="65" width="10" height="10" fill="#000" />
+                        <rect x="80" y="80" width="10" height="10" fill="#000" />
+                    </svg>
+                </div>
+            </div>
+            <div class="col-9">
+                <div class="small text-muted mb-1">CÓDIGO DE VERIFICACIÓN / AUTENTICIDAD:</div>
+                <div class="font-monospace fw-bold text-dark small">{{ recibo.codigo_verificacion }}</div>
+                <div class="text-muted" style="font-size: 0.75rem;">
+                    Comprobante inalterable generado conforme al marco de administración comunitaria de servicios básicos.
+                </div>
+            </div>
+        </div>
+
+        <!-- Firmas -->
+        <div class="row pt-4 text-center small">
+            <div class="col-6">
+                <div style="border-top: 1px dashed #999; margin: 0 40px; padding-top: 5px;">
+                    <strong>Firma y Sello Cajero</strong><br>
+                    {{ recibo.cajero.get_full_name|default:recibo.cajero.username }}
+                </div>
+            </div>
+            <div class="col-6">
+                <div style="border-top: 1px dashed #999; margin: 0 40px; padding-top: 5px;">
+                    <strong>Conformidad del Socio</strong><br>
+                    CI: {{ recibo.socio.ci }}
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Modal para Anular Recibo Oficial (Supervisor) -->
+{% if recibo.estado == 'EMITIDO' %}
+<div class="modal fade" id="modalAnularRecibo" tabindex="-1" aria-labelledby="modalAnularLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="POST" action="{% url 'caja:recibo_anular' recibo.id %}">
+            {% csrf_token %}
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="modalAnularLabel">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>Anular Recibo Oficial {{ recibo.numero_recibo }}
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning small">
+                        <strong>Atención (Principio P5 / Regla R-DOM-17):</strong> La anulación de este recibo revertirá automáticamente todas las obligaciones saldadas ({{ recibo.detalles.count }} conceptos) al estado <strong>PENDIENTE</strong>, restaurando la deuda del socio. El recibo no será eliminado físicamente de la base de datos.
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Motivo Documentado de Anulación <span class="text-danger">*</span></label>
+                        {{ anular_form.motivo }}
+                        <small class="text-muted">Mínimo 10 caracteres obligatorios.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">Confirmar Anulación y Revertir Deudas</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<style>
+@media print {
+    body {
+        background-color: #fff !important;
+    }
+    .d-print-none, .sidebar, .navbar, footer {
+        display: none !important;
+    }
+    .container {
+        max-width: 100% !important;
+        padding: 0 !important;
+    }
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+    }
+}
+</style>
+{% endblock %}
+

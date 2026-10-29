@@ -1,0 +1,294 @@
+{% extends 'base.html' %}
+
+{% block title %}Lote {{ lote.codigo }} - SisAgua{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+
+    <!-- Encabezado del Lote -->
+    <div class="row align-items-center mb-3">
+        <div class="col-md-7">
+            <div class="d-flex align-items-center gap-2">
+                <a href="{% url 'transcripcion:lotes_list' %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left"></i>
+                </a>
+                <h2 class="h3 mb-0 text-primary">
+                    <i class="bi bi-journal-text me-2"></i>{{ lote.nombre }}
+                </h2>
+                <span class="badge bg-secondary">{{ lote.codigo }}</span>
+            </div>
+            <p class="text-muted small mb-0 mt-1">
+                Fuente: <strong>{{ lote.fuente_documental }}</strong> | Responsable: {{ lote.responsable.username }} | Periodo base: {{ lote.periodo_predeterminado|default:"Varios" }}
+            </p>
+        </div>
+        <div class="col-md-5 text-md-end mt-2 mt-md-0">
+            {% if lote.estado != 'CERRADO' %}
+                <a href="{% url 'transcripcion:transcripcion_capturar' lote.id %}" class="btn btn-primary">
+                    <i class="bi bi-pen me-1"></i>Transcribir Fila
+                </a>
+            {% endif %}
+            <a href="{% url 'transcripcion:reporte_transcripcion' %}?lote={{ lote.id }}" class="btn btn-outline-secondary ms-1">
+                <i class="bi bi-printer me-1"></i>Reporte
+            </a>
+        </div>
+    </div>
+
+    <!-- Cuadro de Mando de Avance del Lote (Sección 8.6) -->
+    <div class="card shadow-sm border-0 mb-4 bg-light">
+        <div class="card-body p-3">
+            <div class="row g-3 text-center">
+                <div class="col-6 col-md-2 border-end">
+                    <span class="text-muted small d-block">TOTAL DIGITADOS</span>
+                    <strong class="h4 mb-0 text-dark">{{ metricas.total_registrados }}</strong>
+                    {% if lote.total_estimado %}
+                        <small class="text-muted d-block">de {{ lote.total_estimado }} est.</small>
+                    {% endif %}
+                </div>
+                <div class="col-6 col-md-2 border-end">
+                    <span class="text-muted small d-block">TRANSCRITOS</span>
+                    <strong class="h4 mb-0 text-secondary">{{ metricas.transcritos }}</strong>
+                    <small class="text-muted d-block">Por revisar</small>
+                </div>
+                <div class="col-6 col-md-2 border-end">
+                    <span class="text-muted small d-block">OBSERVADOS</span>
+                    <strong class="h4 mb-0 text-warning">{{ metricas.observados }}</strong>
+                    <small class="text-muted d-block">Con dudas</small>
+                </div>
+                <div class="col-6 col-md-2 border-end">
+                    <span class="text-muted small d-block">VALIDADOS</span>
+                    <strong class="h4 mb-0 text-primary">{{ metricas.validados }}</strong>
+                    <small class="text-muted d-block">Aprobados</small>
+                </div>
+                <div class="col-6 col-md-2 border-end">
+                    <span class="text-muted small d-block">REGULARIZADOS</span>
+                    <strong class="h4 mb-0 text-success">{{ metricas.migrados }}</strong>
+                    <small class="text-muted d-block">Deuda en caja</small>
+                </div>
+                <div class="col-6 col-md-2">
+                    <span class="text-muted small d-block">AVANCE VALIDACIÓN</span>
+                    <strong class="h4 mb-0 text-info">{{ metricas.avance_validacion_pct }}%</strong>
+                    <div class="progress mt-1" style="height: 6px;">
+                        <div class="progress-bar bg-info" role="progressbar" style="width: {{ metricas.avance_validacion_pct }}%;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros y Búsqueda -->
+    <div class="card shadow-sm border-0 mb-3 bg-white">
+        <div class="card-body p-2">
+            <form method="GET" class="row g-2 align-items-center">
+                <div class="col-md-5">
+                    <input type="text" name="buscar" value="{{ buscar }}" class="form-control form-control-sm" placeholder="Buscar por socio, CI, foja o código TRX...">
+                </div>
+                <div class="col-md-4">
+                    <select name="estado" class="form-select form-select-sm">
+                        <option value="">-- Todos los Estados --</option>
+                        {% for val, label in estados %}
+                            <option value="{{ val }}" {% if estado_filtro == val %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex gap-1">
+                    <button type="submit" class="btn btn-primary btn-sm w-100">
+                        <i class="bi bi-funnel me-1"></i>Filtrar
+                    </button>
+                    {% if buscar or estado_filtro %}
+                        <a href="{% url 'transcripcion:lote_detalle' lote.id %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-x-circle"></i>
+                        </a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tabla de Registros Digitados -->
+    <div class="card shadow-sm border-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Código</th>
+                        <th>Socio Titular</th>
+                        <th>Periodo</th>
+                        <th>Lecturas (Ant / Act)</th>
+                        <th class="text-center">Consumo</th>
+                        <th class="text-end">Importe Doc.</th>
+                        <th>Foja / Ref.</th>
+                        <th class="text-center">Estado</th>
+                        <th class="text-end" style="min-width: 180px;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in registros %}
+                        <tr class="{% if r.estado == 'OBSERVADO' %}table-warning-subtle{% elif r.estado == 'RECHAZADO' %}table-danger-subtle text-muted{% elif r.estado == 'MIGRADO' %}table-success-subtle{% endif %}">
+                            <td><strong class="text-primary">{{ r.codigo }}</strong></td>
+                            <td>
+                                <strong>{{ r.socio.apellidos }}, {{ r.socio.nombres }}</strong>
+                                <small class="text-muted d-block">CI: {{ r.socio.ci }} | {{ r.socio.codigo }}</small>
+                            </td>
+                            <td><span class="badge bg-secondary">{{ r.periodo }}</span></td>
+                            <td>
+                                {% if r.lectura_anterior is not None and r.lectura_actual is not None %}
+                                    <small class="text-muted">{{ r.lectura_anterior }}</small> → <strong>{{ r.lectura_actual }}</strong>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if r.consumo_calculado is not None %}
+                                    <span class="badge bg-light text-dark border">{{ r.consumo_calculado }} m³</span>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end fw-bold">
+                                {% if r.importe_documentado is not None %}
+                                    Bs {{ r.importe_documentado|floatformat:2 }}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td><small class="text-muted">{{ r.referencia_foja|default:"-" }}</small></td>
+                            <td class="text-center">
+                                {% if r.estado == 'VALIDADO' %}
+                                    <span class="badge bg-primary">Validado</span>
+                                {% elif r.estado == 'MIGRADO' %}
+                                    <span class="badge bg-success">Migrado</span>
+                                {% elif r.estado == 'OBSERVADO' %}
+                                    <span class="badge bg-warning text-dark" title="{{ r.motivo_observacion_rechazo }}">Observado</span>
+                                {% elif r.estado == 'RECHAZADO' %}
+                                    <span class="badge bg-danger" title="{{ r.motivo_observacion_rechazo }}">Rechazado</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Transcrito</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                {% if r.estado == 'TRANSCRITO' or r.estado == 'OBSERVADO' %}
+                                    <!-- Botón Validar -->
+                                    <form method="POST" action="{% url 'transcripcion:transcripcion_validar' r.id %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-success" title="Validar / Aprobar">
+                                            <i class="bi bi-check-lg"></i>
+                                        </button>
+                                    </form>
+                                    <!-- Botón Observar -->
+                                    <button type="button" class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#modalObservar{{ r.id }}" title="Marcar Observación">
+                                        <i class="bi bi-exclamation-triangle"></i>
+                                    </button>
+                                    <!-- Botón Rechazar -->
+                                    <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalRechazar{{ r.id }}" title="Rechazar">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                {% elif r.estado == 'VALIDADO' %}
+                                    <!-- Botón Regularizar Deuda a Caja (R-DOM-19) -->
+                                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalRegularizar{{ r.id }}" title="Regularizar a Deuda Exigible en Caja">
+                                        <i class="bi bi-arrow-up-right-circle me-1"></i>Regularizar
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalRechazar{{ r.id }}" title="Rechazar">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                {% elif r.estado == 'MIGRADO' %}
+                                    <span class="badge bg-success-subtle text-success border border-success small" title="Obligación #{{ r.obligacion_regularizada_id }}">
+                                        <i class="bi bi-check2-all me-1"></i>Deuda Obligación #{{ r.obligacion_regularizada_id }}
+                                    </span>
+                                {% else %}
+                                    <small class="text-muted">Descartado</small>
+                                {% endif %}
+                            </td>
+                        </tr>
+
+                        <!-- Modal Observar -->
+                        <div class="modal fade" id="modalObservar{{ r.id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <form method="POST" action="{% url 'transcripcion:transcripcion_observar' r.id %}">
+                                    {% csrf_token %}
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-warning text-dark">
+                                            <h6 class="modal-title"><i class="bi bi-exclamation-triangle me-2"></i>Observar Registro {{ r.codigo }}</h6>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body text-start">
+                                            <p class="small text-muted mb-2">Socio: <strong>{{ r.socio.codigo }} - {{ r.socio.apellidos }}</strong> | Periodo: {{ r.periodo }}</p>
+                                            <label class="form-label fw-bold small">Motivo de la Observación <span class="text-danger">*</span></label>
+                                            <textarea name="motivo" class="form-control" rows="3" required placeholder="Detalle la duda o discrepancia detectada..."></textarea>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                            <button type="submit" class="btn btn-sm btn-warning">Guardar Observación</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Modal Rechazar -->
+                        <div class="modal fade" id="modalRechazar{{ r.id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <form method="POST" action="{% url 'transcripcion:transcripcion_rechazar' r.id %}">
+                                    {% csrf_token %}
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-danger text-white">
+                                            <h6 class="modal-title"><i class="bi bi-x-circle me-2"></i>Rechazar Registro {{ r.codigo }}</h6>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body text-start">
+                                            <div class="alert alert-warning small py-2 mb-2">
+                                                <strong>Atención:</strong> El registro quedará descartado formalmente (P5).
+                                            </div>
+                                            <label class="form-label fw-bold small">Motivo Documentado de Rechazo <span class="text-danger">*</span></label>
+                                            <textarea name="motivo" class="form-control" rows="3" required placeholder="Justifique la causal de descarte (mínimo 10 caracteres)..."></textarea>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                            <button type="submit" class="btn btn-sm btn-danger">Confirmar Rechazo</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Modal Regularizar Deuda (R-DOM-19) -->
+                        <div class="modal fade" id="modalRegularizar{{ r.id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <form method="POST" action="{% url 'transcripcion:transcripcion_regularizar' r.id %}">
+                                    {% csrf_token %}
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-primary text-white">
+                                            <h6 class="modal-title"><i class="bi bi-cash-stack me-2"></i>Regularizar Deuda Histórica a Caja</h6>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body text-start">
+                                            <div class="alert alert-info small py-2 mb-3">
+                                                <strong>Regla R-DOM-19:</strong> Esta acción generará una <strong>Obligación económica exigible</strong> en la cuenta del socio por <strong>Bs {{ r.importe_documentado|default:r.importe_calculado|floatformat:2 }}</strong> para el periodo <strong>{{ r.periodo }}</strong>, habilitándola para cobro en ventanilla de caja.
+                                            </div>
+                                            <label class="form-label fw-bold small">Documento o Justificación de Respaldo <span class="text-danger">*</span></label>
+                                            <textarea name="motivo_respaldo" class="form-control" rows="3" required placeholder="Ej. Aprobado por Acta de Asamblea Nº 45 o compromiso de pago firmado..."></textarea>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                            <button type="submit" class="btn btn-sm btn-primary">Autorizar y Regularizar Deuda</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                    {% empty %}
+                        <tr>
+                            <td colspan="9" class="text-center py-4 text-muted">
+                                <i class="bi bi-journal-x fs-3 d-block mb-2"></i>
+                                No se encontraron registros de transcripción en este lote con los filtros actuales.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+

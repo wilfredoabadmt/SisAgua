@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Tarifarios y Vigencias — {{ institucion.nombre|default:"SisAgua" }}{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto space-y-6">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 border-b border-slate-200 gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Esquemas Tarifarios</h1>
+            <p class="text-sm text-slate-500 mt-1">
+                Estructura de precios, tarifas básicas y tramos de consumo con vigencia controlada (R-DOM-10: No Retroactividad).
+            </p>
+        </div>
+        <div class="flex space-x-3">
+            <a href="{% url 'servicios:servicios_list' %}" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 px-4 rounded-lg transition flex items-center space-x-2">
+                <i class="fa-solid fa-list"></i>
+                <span>Servicios</span>
+            </a>
+            <a href="{% url 'servicios:tarifario_crear' %}" class="bg-blue-700 hover:bg-blue-800 text-white font-semibold py-2 px-4 rounded-lg shadow-sm transition flex items-center space-x-2">
+                <i class="fa-solid fa-plus"></i>
+                <span>Nuevo Tarifario</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Tabla de Tarifarios -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
+                <thead class="bg-slate-50 text-slate-600 font-semibold text-xs uppercase tracking-wider">
+                    <tr>
+                        <th class="px-6 py-3.5">Nombre del Tarifario</th>
+                        <th class="px-6 py-3.5">Categoría</th>
+                        <th class="px-6 py-3.5">Tarifa Básica</th>
+                        <th class="px-6 py-3.5">Mínimo Incluido</th>
+                        <th class="px-6 py-3.5">Precio Excedente</th>
+                        <th class="px-6 py-3.5">Vigencia</th>
+                        <th class="px-6 py-3.5 text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-slate-700">
+                    {% for t in tarifarios %}
+                        <tr class="hover:bg-slate-50 transition">
+                            <td class="px-6 py-4">
+                                <p class="font-semibold text-slate-900">{{ t.nombre }}</p>
+                                <p class="text-xs text-slate-400">{{ t.servicio.nombre }}</p>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-800">
+                                    {{ t.get_categoria_display }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap font-mono font-bold text-slate-800">
+                                Bs {{ t.tarifa_basica }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap font-mono text-slate-600">
+                                {{ t.consumo_minimo_m3 }} m³
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap font-mono text-slate-600">
+                                Bs {{ t.precio_adicional_m3 }} / m³
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-xs">
+                                <span class="font-semibold text-slate-700">Desde:</span> {{ t.fecha_vigencia_desde|date:"d/m/Y" }}<br>
+                                {% if t.fecha_vigencia_hasta %}
+                                    <span class="font-semibold text-slate-700">Hasta:</span> {{ t.fecha_vigencia_hasta|date:"d/m/Y" }}
+                                {% else %}
+                                    <span class="inline-flex items-center text-emerald-700 font-bold">
+                                        <i class="fa-solid fa-circle text-[8px] mr-1"></i> Vigente
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right space-x-2">
+                                <a href="{% url 'servicios:tarifario_detalle' t.pk %}" class="text-blue-600 hover:text-blue-800 font-medium text-xs">
+                                    Ver Tramos & Detalle
+                                </a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="7" class="px-6 py-10 text-center text-slate-400">
+                                <i class="fa-solid fa-calculator text-3xl mb-2 text-slate-300"></i>
+                                <p>No hay esquemas tarifarios configurados.</p>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
